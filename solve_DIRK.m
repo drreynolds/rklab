@@ -110,40 +110,40 @@ for tstep = 2:length(tvals)
       
       % loop over stages
       for stage=1:s
-	 
-	 % set stage initial guess as previous stage solution
-	 Yguess = Ynew;
-      
-	 % set stage number into Fdata structure
-	 Fdata.stage = stage;
-	 
-	 % construct RHS comprised of old time data
-	 %    zi = y_n + h*sum_{j=1}^s (a(i,j)*fj)
-	 % <=>
-	 %    zi - h*(a(i,i)*fi) = y_n + h*sum_{j=1}^{i-1} (a(i,j)*fj)
-	 % =>
-	 %    rhs = y_n + h*sum_{j=1}^{i-1} (a(i,j)*fj)
-	 Fdata.rhs = Y0;
-	 for j=1:stage-1
-	    Fdata.rhs = Fdata.rhs + h*A(stage,j)*feval(fcn, t+h*c(j), z(:,j));
-	 end
-	 
-	 % call Newton solver to compute new stage solution
-	 Fdata.t = t;
-	 [Ynew,lin,ierr] = newton_damped('F_DIRK', 'A_DIRK', ...
-	     Yguess, Fdata, newt_tol, newt_maxit, newt_alpha);
-	 lits = lits + lin;
-	 
-	 % check newton error flag, if failure break out of stage loop
-	 if (ierr ~= 0) 
-	    st_fail = 1;
-	    c_fails = c_fails + 1;
-	    break;
-	 end
-	 
-	 % update stored solution with new value
-	 z(:,stage) = Ynew;
-	 
+         
+         % set stage initial guess as previous stage solution
+         Yguess = Ynew;
+         
+         % set stage number into Fdata structure
+         Fdata.stage = stage;
+         
+         % construct RHS comprised of old time data
+         %    zi = y_n + h*sum_{j=1}^s (a(i,j)*fj)
+         % <=>
+         %    zi - h*(a(i,i)*fi) = y_n + h*sum_{j=1}^{i-1} (a(i,j)*fj)
+         % =>
+         %    rhs = y_n + h*sum_{j=1}^{i-1} (a(i,j)*fj)
+         Fdata.rhs = Y0;
+         for j=1:stage-1
+            Fdata.rhs = Fdata.rhs + h*A(stage,j)*feval(fcn, t+h*c(j), z(:,j));
+         end
+         
+         % call Newton solver to compute new stage solution
+         Fdata.t = t;
+         [Ynew,lin,ierr] = newton_damped('F_DIRK', 'A_DIRK', ...
+                                         Yguess, Fdata, newt_tol, newt_maxit, newt_alpha);
+         lits = lits + lin;
+         
+         % check newton error flag, if failure break out of stage loop
+         if (ierr ~= 0) 
+            st_fail = 1;
+            c_fails = c_fails + 1;
+            break;
+         end
+         
+         % update stored solution with new value
+         z(:,stage) = Ynew;
+         
       end
       nsteps = nsteps + 1;
       
@@ -153,52 +153,52 @@ for tstep = 2:length(tvals)
       % check whether step accuracy meets tolerances (only if stages successful)
       if ((st_fail == 0) & embedded)
 
-	 % compute error in current step
-	 err_step = max(norm((Ynew - Y2)./(rtol*Ynew + atol),inf), eps);
-	 
-	 % if error too high, flag step as a failure (to be recomputed)
-	 if (err_step > 1.1) 
-	    a_fails = a_fails + 1;
-	    st_fail = 1;
-	 end
-	 
+         % compute error in current step
+         err_step = max(norm((Ynew - Y2)./(rtol*Ynew + atol),inf), eps);
+         
+         % if error too high, flag step as a failure (to be recomputed)
+         if (err_step > 1.1) 
+            a_fails = a_fails + 1;
+            st_fail = 1;
+         end
+         
       end
 
       % if step was successful
       if (st_fail == 0) 
-      
-	 % update old solution, current time
-	 Y0 = Ynew;
-	 t = t + h;
-   
-	 % for embedded methods, estimate error and update time step
-	 if (embedded) 
-	    h_old = h;
-	    safety = 0.9;
-	    dt_growth = 10;
-	    alpha = 1.0/p;
-	    Eratio = max(norm((Ynew - Y2)./(rtol*Ynew + atol),inf), eps);
-	    if (Eratio == 0.0)
-	       h = 1000;
-	    else
-	       h = safety * h_old * Eratio^(-alpha);
-	    end
-	    h = min(dt_growth*h_old, h);
-	 % otherwise, just use the fixed minimum input step size
-	 else
-	    h = hmin;
-	 end
-	 
-      % if step failed, reduce step size and retry
+         
+         % update old solution, current time
+         Y0 = Ynew;
+         t = t + h;
+         
+         % for embedded methods, estimate error and update time step
+         if (embedded) 
+            h_old = h;
+            safety = 0.9;
+            dt_growth = 10;
+            alpha = 1.0/p;
+            Eratio = max(norm((Ynew - Y2)./(rtol*Ynew + atol),inf), eps);
+            if (Eratio == 0.0)
+               h = 1000;
+            else
+               h = safety * h_old * Eratio^(-alpha);
+            end
+            h = min(dt_growth*h_old, h);
+            % otherwise, just use the fixed minimum input step size
+         else
+            h = hmin;
+         end
+         
+         % if step failed, reduce step size and retry
       else
-	 
-	 % reset solution guess, update work counter, reduce time step
-	 Ynew = Y0;
-	 h = h * dt_reduce;
+         
+         % reset solution guess, update work counter, reduce time step
+         Ynew = Y0;
+         h = h * dt_reduce;
          if (h <= hmin) 
             return
          end
-      
+         
       end
       
    end  % while loop attempting to solve steps to next output time
@@ -209,3 +209,56 @@ for tstep = 2:length(tvals)
 end  % time step loop
 
 % end function
+end
+
+
+
+
+function [y,y2] = Y_DIRK(z, Fdata)
+% Inputs:  z = current guesses for [z1, ..., zs]
+%          Fdata = structure containing extra information for evaluating F.
+% Outputs: y = glued-together time-evolved solution
+%          y2 = alternate glued-together solution (if embedded coeffs
+%          included in Butcher table; otherwise the same as y)
+%
+% This routine takes as input the intermediate-time states (z) for a
+% multi-stage DIRK method, and pieces them together to form the time-evolved
+% solution y(t_{n+1}). 
+
+% extract IRK method information from Fdata
+B = Fdata.B;
+[Brows, Bcols] = size(B);
+s = Bcols - 1;
+c = B(1:s,1);
+b = (B(s+1,2:s+1))';
+
+% check to see if we have coefficients for embedding
+if (Brows > Bcols)
+   b2 = (B(s+2,2:s+1))';
+else
+   b2 = b;
+end
+
+% get some problem information
+[zrows,zcols] = size(z);
+nvar = zrows;
+if (zcols ~= s)
+   error('Y_DIRK error: z has incorrect number of stages');
+end
+
+% call f at our guesses
+f = zeros(nvar,s);
+for is=1:s
+   t = Fdata.t + Fdata.h*c(is);
+   f(:,is) = feval(Fdata.fname, t, z(:,is));
+end
+
+% form the solutions
+%    ynew = yold + h*sum(b(j)*fj)
+y  = Fdata.yold + Fdata.h*f*b;
+y2 = Fdata.yold + Fdata.h*f*b2;
+
+% end of function
+end
+
+
