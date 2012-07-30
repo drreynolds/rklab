@@ -1,0 +1,25 @@
+Example test problems:
+
+p1. Van der Pol test (ODE system)
+      u' = v
+      v' = (v - v*u^2)/ep - u
+   where u(0) = 2,  v(0) = 0, and ep = 0.2.  We evaluate over the time
+   interval [0,12].
+
+
+p2. Brusselator test (stiff ODE system)
+      u' = a - (w+1)*u + u^2*v,
+      v' = w*u - u^2*v,
+      w' = (b-w)/ep - u*w,
+   where u(0) = 1.2, v(0) = 3.1 and w(0) = 3, with the prameters a=1,
+   b=3.5 and ep=5e-6.  We evaluate over the time interval [0,10].  
+
+
+p3. Brusselator PDE test (1D)
+      u' = d1*u_xx + a - (b+1)*u + u^2*v,
+      v' = d2*v_xx + b*u - u^2*v,
+   with parameters a=0.6, b=2, d1=d2=0.25, over the spatial interval
+   [0,1] and the time interval [0,80].  Initial conditions are 
+   u(x,0) = a + 0.1*sin(pi*x), v(x,0) = b/a + 0.1*sin(pi*x), and
+   boundary conditions are homogeneous Dirichlet.  We use a mesh with
+   500 spatial zones.
