@@ -66,6 +66,9 @@ a_fails = 0;
 % set the solver parameters
 dt_reduce  = 0.1;
 dt_stable  = 0.5;
+ONEMSM     = 1-sqrt(eps);
+ONEPSM     = 1+sqrt(eps);
+ERRTOL     = 1.1;
 
 % store temporary states
 t = tvals(1);
@@ -89,7 +92,7 @@ nsteps = 0;
 for tstep = 2:length(tvals)
 
    % loop over internal time steps to get to desired output time
-   while (t < tvals(tstep))
+   while (t < tvals(tstep)*ONEMSM)
       
       % limit internal time step if needed
       h = max([h, hmin]);            % enforce minimum time step size
@@ -134,7 +137,7 @@ for tstep = 2:length(tvals)
 	 err_step = max(norm((Ynew - Y2)./(rtol*Ynew + atol),inf), eps);
 	 
 	 % if error too high, flag step as a failure (to be recomputed)
-	 if (err_step > 1.1) 
+         if (err_step > ERRTOL*ONEPSM) 
 	    a_fails = a_fails + 1;
 	    st_fail = 1;
 	 end
@@ -178,14 +181,17 @@ for tstep = 2:length(tvals)
 	 
       % if step failed, reduce step size and retry
       else
-	 
+
+         % if already at minimum step, just return with failure
+         if (h <= hmin) 
+            fprintf('Cannot achieve desired accuracy, consider reducing hmin\n');
+            return
+         end
+
 	 % reset solution guess, update work counter, reduce time step
 	 Ynew = Y0;
 	 h = h * dt_reduce;
 	 h_s = h_s + 1;
-         if (h <= hmin) 
-            return
-         end
 	 
       end
       

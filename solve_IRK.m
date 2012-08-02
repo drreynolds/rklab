@@ -55,6 +55,7 @@ Y(:,1) = Y0;
 newt_maxit = 20;
 newt_tol   = 1e-10;
 newt_alpha = 1;
+ONEMSM     = 1-sqrt(eps);
 
 % store temporary states
 t = tvals(1);
@@ -74,7 +75,7 @@ lits = 0;
 for tstep = 2:length(tvals)
 
    % loop over internal time steps to get to desired output time
-   while (t < tvals(tstep))
+   while (t < tvals(tstep)*ONEMSM)
       
       % set internal time step
       h = min([hmax, tvals(tstep)-t]);
