@@ -33,9 +33,7 @@ function B = butcher(method_name)
 %    Ascher(3,4,3)-ERK
 %    Ascher(4,4,3)-ERK
 %    Cooper4-ERK
-%    Cooper4-ESDIRK
 %    Cooper6-ERK
-%    Cooper6-ESDIRK
 %    Heun-Euler-ERK (*)
 %    Bogacki-Shampine-ERK (*)
 %    Fehlberg-ERK (*)
@@ -60,6 +58,8 @@ function B = butcher(method_name)
 %    Ascher(2,2,2)-SDIRK
 %    Ascher(3,4,3)-SDIRK
 %    Ascher(4,4,3)-SDIRK
+%    Cooper4-ESDIRK
+%    Cooper6-ESDIRK
 %    TRBDF2-ESDIRK (*)
 %    TRX2-ESDIRK (*)
 %    Billington-SDIRK (*)
