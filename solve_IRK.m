@@ -59,9 +59,10 @@ function [tvals,Y,nsteps,lits] = solve_IRK(fcn,Jfcn,tvals,Y0,B,rtol,atol,hmin,hm
 % All Rights Reserved
 
    
-% get number of stages for IRK method
+% get number of stages and internal time fractions for IRK method
 [Brows, Bcols] = size(B);
-s = Bcols - 1;
+s = Bcols - 1;        
+c = B(1:s,1);
 
 % check whether time step adaptivity is desired
 adaptivity = 0;
@@ -163,10 +164,12 @@ for tstep = 2:length(tvals)
          Fdata.yold = Ynew;   % solution from previous step
          Fdata.t    = t;      % time of last successful step
       
-         % set Newton initial guesses as previous step solution
+         % set Newton initial guesses as linear interpolants of
+         % full step solutions
          z = zeros(s*m,1);
          for i = 0:s-1
-            z(i*m+1:(i+1)*m) = Ynew;
+            ti = c(i+1)*0.5;
+            z(i*m+1:(i+1)*m) = (1-ti)*Ynew + ti*Y1;
          end
          
          % call Newton solver to update solution in time
@@ -194,10 +197,12 @@ for tstep = 2:length(tvals)
             Fdata.yold = Y2;       % solution from previous half-step
             Fdata.t    = t+0.5*h;  % time of half-step 
             
-            % set Newton initial guesses as half step solution
+            % set Newton initial guesses as linear interpolants of
+            % full step solutions
             z = zeros(s*m,1);
             for i = 0:s-1
-               z(i*m+1:(i+1)*m) = Y2;
+               ti = 0.5 + c(i+1)*0.5;
+               z(i*m+1:(i+1)*m) = (1-ti)*Ynew + ti*Y1;
             end
             
             % call Newton solver to update solution in time
