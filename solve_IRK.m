@@ -33,12 +33,25 @@ function [tvals,Y,nsteps,lits] = solve_IRK(fcn,Jfcn,tvals,Y0,B,rtol,atol,hmin,hm
 %     tvals  = the same as the input array tvals
 %     y      = [y(t0), y(t1), y(t2), ..., y(tN)], where each
 %               y(t*) is a column vector of length m.
-%     nsteps = number of internal time steps taken by method
+%     nsteps = number of internal time steps taken by method.
+%              Note: if adaptivity is enabled, this includes the
+%              two half steps used in the Richardson error estimate
+%              and extrapolation.
 %     lits   = number of linear solves required by method
 %
-% Note: currently rtol and atol are ignored, and the solver only
-% operates in fixed-step mode, using steps of size hmin.
+% Note: since embeddings in IRK methods are typically *much* lower
+% order than the original method, we instead base our adaptivity on
+% Richardson extrapolation.  Specifically, for every time step, we
+% solve using both a single step of size h and two steps of size
+% h/2.  The difference of these provides an estimate on the local
+% error,  Moreover, an appropriately-chosen linear combination of
+% these provides a solution that is one order of accuracy higher
+% than the method itself -- this is the solution that is stored and
+% returned to the user.
 %
+% Note2: to run in fixed-step mode, call with hmin=hmax as the desired 
+% time step size, and set the tolerances to large positive numbers.
+%   
 % Daniel R. Reynolds
 % Department of Mathematics
 % Southern Methodist University
@@ -50,8 +63,14 @@ function [tvals,Y,nsteps,lits] = solve_IRK(fcn,Jfcn,tvals,Y0,B,rtol,atol,hmin,hm
 [Brows, Bcols] = size(B);
 s = Bcols - 1;
 
-% extract order of accuracy for method
-p = B(s+1,1);
+% check whether time step adaptivity is desired
+adaptivity = 0;
+if (abs(hmax-hmin)/abs(hmax) > sqrt(eps))
+   q = B(s+1,1);     % order of accuracy for method
+   c1 = -1/(2^q-1);  % Richardson extrapolation factor for h step
+   c2 = 1 - c1;      % Richardson extrapolation factor for h/2 step
+   adaptivity = 1;
+end
 
 % initialize output arrays
 N = length(tvals);
@@ -59,12 +78,21 @@ m = length(Y0);
 Y = zeros(m,N);
 Y(:,1) = Y0;
 
+% initialize diagnostics
+c_fails = 0;   % total convergence failures
+a_fails = 0;   % total accuracy failures
+
 % set the solver parameters
 newt_maxit = 20;           % max number of Newton iterations
 newt_tol   = 1e-10;        % Newton solver tolerance
 newt_alpha = 1;            % Newton damping parameter
+h_reduce   = 0.1;          % failed step reduction factor 
+h_safety   = 0.9;          % adaptivity safety factor
+h_growth   = 10;           % adaptivity growth bound
 ONEMSM     = 1-sqrt(eps);  % coefficients to account for
 ONEPSM     = 1+sqrt(eps);  %   floating-point roundoff
+ERRTOL     = 1.1;          % upper bound on allowed step error
+                           %   (in WRMS norm)
 
 % initialize temporary variables
 t = tvals(1);
@@ -76,6 +104,9 @@ Fdata.Jname = Jfcn;   % ODE RHS Jacobian function name
 Fdata.B     = B;      % Butcher table 
 Fdata.s     = s;      % number of stages
 
+% set initial time step size
+h = hmin;
+
 % initialize work counters
 nsteps = 0;
 lits   = 0;
@@ -86,16 +117,20 @@ for tstep = 2:length(tvals)
    % loop over internal time steps to get to desired output time
    while (t < tvals(tstep)*ONEMSM)
       
-      % set internal time step
+      % bound internal time step 
       h = max([h, hmin]);            % enforce minimum time step size
       h = min([h, hmax]);            % maximum time step size
       h = min([h, tvals(tstep)-t]);  % stop at output time
 
-      
       % set Fdata values for this step
       Fdata.h    = h;      % current step size
       Fdata.yold = Ynew;   % solution from previous step
       Fdata.t    = t;      % time of last successful step
+
+      % reset solve failure flag
+      st_fail = 0;
+      
+      % solve with time step h
       
       % set Newton initial guesses as previous step solution
       z = zeros(s*m,1);
@@ -107,30 +142,156 @@ for tstep = 2:length(tvals)
       [z,lin,ierr] = newton_damped('F_IRK', 'A_IRK', z, Fdata, ...
                                    newt_tol, newt_maxit, newt_alpha);
 
-      % increment total linear solver statistics
-      lits = lits + lin;
+      % increment total linear solver and step statistics 
+      lits   = lits + lin;
+      nsteps = nsteps + 1;
       
-      % compute new solution
-      Ynew = Y_IRK(z,Fdata);
-      
-      % check newton error flag, if failure return with error
+      % compute solution with this h
+      Y1 = Y_IRK(z,Fdata);
+
+      % if Newton method failed, set relevant flags/statistics
       if (ierr ~= 0) 
-	 error('Newton failure: consider reducing hmin and retry.');
+         st_fail = 1;
+         c_fails = c_fails + 1;
       end
-	 
-      % update time, time step counter
-      t = t + h;
-      nsteps = nsteps + s;
-   
-   end
+         
+      % if adaptivity enabled, solve with steps of size h/2
+      if (adaptivity & (st_fail == 0)) 
+         
+         % set Fdata values for this half-step
+         Fdata.h    = 0.5*h;  % half-step size
+         Fdata.yold = Ynew;   % solution from previous step
+         Fdata.t    = t;      % time of last successful step
+      
+         % set Newton initial guesses as previous step solution
+         z = zeros(s*m,1);
+         for i = 0:s-1
+            z(i*m+1:(i+1)*m) = Ynew;
+         end
+         
+         % call Newton solver to update solution in time
+         [z,lin,ierr] = newton_damped('F_IRK', 'A_IRK', z, Fdata, ...
+                                      newt_tol, newt_maxit, newt_alpha);
+         
+         % increment total linear solver and step statistics
+         lits   = lits + lin;
+         nsteps = nsteps + 1;
+         
+         % compute half-step solution
+         Y2 = Y_IRK(z,Fdata);
+         
+         % if Newton method failed, set relevant flags/statistics
+         if (ierr ~= 0) 
+            st_fail = 1;
+            c_fails = c_fails + 1;
+         end
+
+         % if first half-step succeeded, take second half-step
+         if (st_fail == 0) 
+            
+            % set Fdata values for second half-step
+            Fdata.h    = 0.5*h;    % half-step size
+            Fdata.yold = Y2;       % solution from previous half-step
+            Fdata.t    = t+0.5*h;  % time of half-step 
+            
+            % set Newton initial guesses as half step solution
+            z = zeros(s*m,1);
+            for i = 0:s-1
+               z(i*m+1:(i+1)*m) = Y2;
+            end
+            
+            % call Newton solver to update solution in time
+            [z,lin,ierr] = newton_damped('F_IRK', 'A_IRK', z, Fdata, ...
+                                         newt_tol, newt_maxit, newt_alpha);
+         
+            % increment total linear solver and step statistics
+            lits   = lits + lin;
+            nsteps = nsteps + 1;
+         
+            % compute full-step solution (store back in Y2)
+            Y2 = Y_IRK(z,Fdata);
+         
+            % if Newton method failed, set relevant flags/statistics
+            if (ierr ~= 0) 
+               st_fail = 1;
+               c_fails = c_fails + 1;
+            end
+
+         end % end second half-step
+         
+      end % half-step solutions
+      
+      % if solves succeeded and time step adaptivity enabled, check step accuracy
+      if (adaptivity & (st_fail == 0))
+
+         % estimate error in current step
+         err_step = max(norm((Y1 - Y2)./(rtol*Y2 + atol),inf), eps);
+         
+         % if error too high, flag step as a failure (will be be recomputed)
+         if (err_step > ERRTOL*ONEPSM) 
+            a_fails = a_fails + 1;
+            st_fail = 1;
+         end
+         
+      end
+
+      % if step was successful (solves succeeded, and error acceptable)
+      if (st_fail == 0) 
+         
+         % update time for last successful step
+         t  = t + h;
+         
+         % update solution (use Richardson extrapolation if available)
+         if (adaptivity)
+            Ynew = c1*Y1 + c2*Y2;
+         else
+            Ynew = Y1;
+         end
+         Y0 = Ynew;
+         
+         % for embedded methods, use error estimate to adapt the time step
+         if (adaptivity) 
+
+            h_old = h;
+            if (err_step == 0.0)     % no error, set max possible
+               h = tvals(end)-t;
+            else                     % set next h (I-controller)
+               h = h_safety * h_old * err_step^(-1.0/q);
+            end
+
+            % enforce maximum growth rate on step sizes
+            h = min(h_growth*h_old, h);
+
+         % otherwise, just use the fixed minimum input step size
+         else
+            h = hmin;
+         end
+         
+      % if step solves or error test failed
+      else
+
+         % if already at minimum step, just return with failure
+         if (h <= hmin) 
+            fprintf('Cannot achieve desired accuracy.\n');
+            fprintf('Consider reducing hmin or increasing rtol.\n');
+            return
+         end
+
+         % otherwise, reset guess, reduce time step, retry solve
+         Ynew = Y0;
+         h = h * h_reduce;
+         
+      end  % end logic tests for step success/failure
+      
+   end  % end while loop attempting to solve steps to next output time
 
    % store updated solution in output array
    Y(:,tstep) = Ynew;
    
-end
+end  % time step loop
 
 
-% end function
+% end solve_IRK function
 end
 
 
