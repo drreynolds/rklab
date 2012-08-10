@@ -63,6 +63,18 @@ fprintf('   maxerr = %.5e,  rmserr = %.5e\n',err_max, err_rms);
 fprintf('   steps = %i (stages = %i), linear solves = %i\n',ns,ns*s,nl);
 
 
+% run with a fully-implicit RK method
+mname = 'RadauIIA-3-5-IRK';
+B = butcher(mname);  s = numel(B(1,:))-1;
+fprintf('\nRunning with IRK integrator: %s (order = %i)\n',mname,B(s+1,1))
+[t,Y,ns,nl] = solve_IRK(fn, Jn, tout, Y0, B, rtol, atol, hmin, hmax);
+err_max = max(max(abs(Y'-Ytrue)));
+err_rms = sqrt(sum(sum((Y'-Ytrue).^2))/numel(Y));
+fprintf('Accuracy/Work Results:\n')
+fprintf('   maxerr = %.5e,  rmserr = %.5e\n',err_max, err_rms);
+fprintf('   steps = %i (stages = %i), linear solves = %i\n',ns,ns*s,nl);
+
+
 % run with an explicit RK method
 mname = 'Merson-5-4-ERK';
 B = butcher(mname);  s = numel(B(1,:))-1;
