@@ -38,29 +38,29 @@ if ((alpha <= 0) || (alpha > 1))
    error('newton_damped error: damping parameter not in (0,1] (alpha)');
 end
 
-% initialize result, residual, Jacobian, statistics
+% initialize result, increment vector, statistics
 y = y0;
-F = feval(Fcn,y,Fdata);
-A = feval(Afn,y,Fdata);
+s = ones(size(y));
 lits = 0;
 
 % perform iterations
 for i=1:maxit
    
    % check residual for stopping
-   if (norm(F,inf) < tol)
-%      fprintf('  newton_damped: converged to tol %g in %i iters\n',norm(F,inf),i-1);
+   if (norm(s,inf) < tol)
+%      fprintf('  newton_damped: converged to tol %g in %i iters\n',norm(s,inf),i-1);
       ierr = 0;
       return
    end
    
-   % perform Newton update
-   y = y - alpha*A\F;
-   lits = lits + 1;
-   
-   % update residual, Jacobian
+   % compute residual, Jacobian
    F = feval(Fcn,y,Fdata);
    A = feval(Afn,y,Fdata);
+   
+   % perform Newton update
+   s = A\F;
+   y = y - alpha*s;
+   lits = lits + 1;
    
 end
 

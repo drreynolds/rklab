@@ -1045,7 +1045,7 @@ elseif (strcmp(method_name,'Gauss-6-12-IRK'))
 else
    
    B = 0;
-   fprintf('Butcher error, string %s not defined\n',method_name);
+   fprintf('Butcher error, method %s not defined\n',method_name);
    
 end
 
