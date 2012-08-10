@@ -11,7 +11,7 @@ function B = butcher(method_name)
 % If the method has an embedded error indicator, we also compute the embedded
 % method's coefficients b2 and order of accuracy p, and provide the output
 %     B = [c, A; q, b; p, b2]
-% Methods with this form are indicated with a (*). 
+% Methods with this form are indicated below with a (*). 
 %
 % Method types are specified by the abbreviations:
 %       ERK - explicit Runge Kutta (strictly lower-triangular A)
@@ -20,89 +20,91 @@ function B = butcher(method_name)
 %     SDIRK - singly-diagonally implicit Runge Kutta (DIRK with fixed diagonal)
 %    ESDIRK - SDIRK method with an initial explicit stage
 %
-% Allowed methods (grouped by category) include:
+% Allowed methods are listed below.  They are grouped by category
+% (ERK, DIRK, IRK).  Each method lists the order of accuracy (q)
+% and number of stages (s).  Methods with embeddings are marked
+% with (*), and their embedding order of accuracy is listed (p):
 %
 % Explicit:
-%    ARK3(2)4L[2]SA-ERK (*)
-%    ARK4(3)6L[2]SA-ERK (*)
-%    ARK5(4)8L[2]SA-ERK (*)
-%    Sayfy-Aburub-4-3-ERK (*)
-%    Ascher(2,3,3)-ERK
-%    Ascher(2,3,2)-ERK
-%    Ascher(2,2,2)-ERK
-%    Ascher(3,4,3)-ERK
-%    Ascher(4,4,3)-ERK
-%    Cooper4-ERK
-%    Cooper6-ERK
-%    Heun-Euler-ERK (*)
-%    Bogacki-Shampine-ERK (*)
-%    Fehlberg-ERK (*)
-%    Cash-Karp-ERK (*)
-%    Dormand-Prince-ERK (*)
-%    ERK-1-1
-%    ERK-2-2
-%    ERK-3-3
-%    ERK-4-4
-%    Merson-5-4-ERK (*)
-%    Zonneveld-4-3-ERK (*)
-%    Verner-6-5-ERK (*)
-%    Fehlberg-8-7-ERK (*)
+%    ERK-1-1                            q=1, s=1
+%    Heun-Euler-ERK (*)                 q=2, s=2, p=1
+%    Ascher(2,3,2)-ERK                  q=2, s=3
+%    Ascher(2,2,2)-ERK                  q=2, s=3
+%    ARK3(2)4L[2]SA-ERK (*)             q=3, s=4, p=2
+%    Bogacki-Shampine-ERK (*)           q=3, s=4, p=2
+%    Cash-Karp-ERK (*)                  q=3, s=6, p=3
+%    ERK-2-2                            q=3, s=2
+%    ERK-3-3                            q=3, s=3
+%    Ascher(2,3,3)-ERK                  q=3, s=3
+%    Cooper4-ERK                        q=3, s=4
+%    Ascher(3,4,3)-ERK                  q=3, s=4
+%    Ascher(4,4,3)-ERK                  q=3, s=5
+%    Zonneveld-4-3-ERK (*)              q=4, s=5, p=3
+%    Fehlberg-ERK (*)                   q=4, s=6, p=3
+%    ARK4(3)6L[2]SA-ERK (*)             q=4, s=6, p=3
+%    Sayfy-Aburub-4-3-ERK (*)           q=4, s=6, p=3
+%    Dormand-Prince-ERK (*)             q=4, s=7, p=3
+%    ERK-4-4                            q=4, s=4
+%    Merson-5-4-ERK (*)                 q=5, s=5, p=4
+%    ARK5(4)8L[2]SA-ERK (*)             q=5, s=8, p=4
+%    Cooper6-ERK                        q=5, s=6
+%    Verner-6-5-ERK (*)                 q=6, s=8, p=5
+%    Fehlberg-8-7-ERK (*)               q=8, s=13, p=7
 %
 % Diagonally implicit:
-%    ARK3(2)4L[2]SA-ESDIRK (*)
-%    ARK4(3)6L[2]SA-ESDIRK (*)
-%    ARK5(4)8L[2]SA-ESDIRK (*)
-%    Sayfy-Aburub-4-3-DIRK (*)
-%    Ascher(2,3,3)-SDIRK
-%    Ascher(2,3,2)-SDIRK
-%    Ascher(2,2,2)-SDIRK
-%    Ascher(3,4,3)-SDIRK
-%    Ascher(4,4,3)-SDIRK
-%    Cooper4-ESDIRK
-%    Cooper6-ESDIRK
-%    TRBDF2-ESDIRK (*)
-%    TRX2-ESDIRK (*)
-%    Billington-SDIRK (*)
-%    Cash(5,2,4)-SDIRK (*)
-%    Cash(5,3,4)-SDIRK (*)
-%    Kvaerno(4,2,3)-ESDIRK (*)
-%    Kvaerno(5,3,4)-ESDIRK (*)
-%    Kvaerno(7,4,5)-ESDIRK (*)
-%    Ismail(7,4,5)-ESDIRK (*)
-%    SDIRK-2-2
+%    SDIRK-2-2                          q=2, s=2
+%    Ascher(2,3,2)-SDIRK                q=2, s=2
+%    Ascher(2,2,2)-SDIRK                q=2, s=2
+%    TRBDF2-ESDIRK (*)                  q=3, s=3, p=2
+%    Billington-SDIRK (*)               q=3, s=3, p=2
+%    Kvaerno(4,2,3)-ESDIRK (*)          q=3, s=4, p=2
+%    ARK3(2)4L[2]SA-ESDIRK (*)          q=3, s=4, p=2
+%    SDIRK-5-4 (*)                      q=3, s=5, p=3
+%    Ascher(2,3,3)-SDIRK                q=3, s=2
+%    Ascher(3,4,3)-SDIRK                q=3, s=3
+%    Ascher(4,4,3)-SDIRK                q=3, s=4
+%    Cooper4-ESDIRK                     q=3, s=4
+%    TRX2-ESDIRK (*)                    q=4, s=3, p=2
+%    Kvaerno(5,3,4)-ESDIRK (*)          q=4, s=4, p=3
+%    Cash(5,3,4)-SDIRK (*)              q=4, s=5, p=3
+%    Cash(5,2,4)-SDIRK (*)              q=4, s=5, p=2
+%    Sayfy-Aburub-4-3-DIRK (*)          q=4, s=6, p=3
+%    ARK4(3)6L[2]SA-ESDIRK (*)          q=4, s=6, p=3
+%    Kvaerno(7,4,5)-ESDIRK (*)          q=5, s=7, p=4
+%    Ismail(7,4,5)-ESDIRK (*)           q=5, s=7, p=4 (seems broken)
+%    ARK5(4)8L[2]SA-ESDIRK (*)          q=5, s=8, p=4
+%    Cooper6-ESDIRK                     q=5, s=6
 %
 % Fully implicit
-%    IRK-1-1
-%    Crank-Nicolson-2-2-IRK
-%    SIRK-2-2
-%    ESIRK-2-2
-%    Gauss-2-4-IRK
-%    RadauIIA-2-3-IRK
-%    LobattoIII-2-2-IRK
-%    LobattoIIIA-2-2-IRK
-%    LobattoIIIB-2-2-IRK
-%    LobattoIIIC-2-2-IRK
-%    Gauss-3-6-IRK
-%    RadauI-3-5-IRK
-%    RadauIA-3-5-IRK
-%    RadauII-3-5-IRK
-%    RadauIIA-3-5-IRK
-%    LobattoIII-3-4-IRK
-%    LobattoIIIA-3-4-IRK
-%    LobattoIIIB-3-4-IRK
-%    LobattoIIIC-3-4-IRK
-%    LobattoIII-4-6-IRK
-%    LobattoIIIA-4-6-IRK
-%    LobattoIIIB-4-6-IRK
-%    LobattoIIIC-4-6-IRK
-%    RadauIIA-5-9-IRK
-%    LobattoIII-5-8-IRK
-%    LobattoIIIA-5-8-IRK
-%    LobattoIIIB-5-8-IRK
-%    LobattoIIIC-5-8-IRK
-%    SDIRK-4-5
-%    SDIRK-5-4
-%    Gauss-6-12-IRK
+%    IRK-1-1                            q=1, s=1
+%    ESIRK-2-2                          q=1, s=2
+%    Crank-Nicolson-2-2-IRK             q=2, s=2
+%    SIRK-2-2                           q=2, s=2
+%    LobattoIII-2-2-IRK                 q=2, s=2
+%    LobattoIIIA-2-2-IRK                q=2, s=2
+%    LobattoIIIB-2-2-IRK                q=2, s=2
+%    LobattoIIIC-2-2-IRK                q=2, s=2
+%    RadauIIA-2-3-IRK                   q=3, s=2
+%    Gauss-2-4-IRK                      q=4, s=2
+%    LobattoIII-3-4-IRK                 q=4, s=3
+%    LobattoIIIA-3-4-IRK                q=4, s=3
+%    LobattoIIIB-3-4-IRK                q=4, s=3
+%    LobattoIIIC-3-4-IRK                q=4, s=3
+%    RadauI-3-5-IRK                     q=5, s=3
+%    RadauIA-3-5-IRK                    q=5, s=3
+%    RadauII-3-5-IRK                    q=5, s=3
+%    RadauIIA-3-5-IRK                   q=5, s=3
+%    Gauss-3-6-IRK                      q=6, s=3
+%    LobattoIII-4-6-IRK                 q=6, s=4
+%    LobattoIIIA-4-6-IRK                q=6, s=4
+%    LobattoIIIB-4-6-IRK                q=6, s=4
+%    LobattoIIIC-4-6-IRK                q=6, s=4
+%    LobattoIII-5-8-IRK                 q=8, s=5
+%    LobattoIIIA-5-8-IRK                q=8, s=5
+%    LobattoIIIB-5-8-IRK                q=8, s=5
+%    LobattoIIIC-5-8-IRK                q=8, s=5
+%    RadauIIA-5-9-IRK                   q=9, s=5
+%    Gauss-6-12-IRK                     q=12, s=6
 %
 % Daniel R. Reynolds
 % Department of Mathematics
@@ -409,7 +411,7 @@ elseif (strcmp(method_name,'Cooper6-ERK'))
 	1/4, 1/4, 0, 0, 0, 0;
 	0, -1, 0, 2, 0, 0;
 	1/6, 0, 0, 2/3, 1/6, 0];
-   q = 6;
+   q = 5;
    B = [c, A; q, b];
    
 elseif (strcmp(method_name,'Cooper6-ESDIRK'))
@@ -423,7 +425,7 @@ elseif (strcmp(method_name,'Cooper6-ESDIRK'))
 	1/4, beta/2, (1-6*beta)/4, beta, 0, 0;
 	0, -2*beta, (1-6*beta-8*beta^2)/(1-4*beta), 4*beta/(1-4*beta), 0, 0;
 	1/6, 0, 0, 2/3, 1/6, 0];
-   q = 6;
+   q = 5;
    B = [c, A; q, b];
 
 elseif (strcmp(method_name,'Heun-Euler-ERK'))
@@ -999,7 +1001,7 @@ elseif (strcmp(method_name,'LobattoIIIC-5-8-IRK'))
    q = 8;
    B = [c, A; q, b];
       
-elseif (strcmp(method_name,'SDIRK-4-5'))
+elseif (strcmp(method_name,'SDIRK-5-4'))
    
    A = [1/4, 0, 0, 0, 0; ...
       1/2, 1/4, 0, 0, 0; ...
