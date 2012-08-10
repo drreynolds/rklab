@@ -1,8 +1,8 @@
 RKLab provides a suite of Matlab files that implement adaptive-step
 explicit and implicit Runge-Kutta methods.  This software is designed
 for instructional use and has been implemented to be easily understood
-and modified.  As a result, certain efficienty-related optimizations
-have been left omitted.
+and modified.  As a result, certain efficiency-related optimizations
+have been omitted.
 
 We currently provide three classes of methods:
 (a) explicit Runge-Kutta (ERK), 
