@@ -77,7 +77,6 @@ a_fails = 0;   % total accuracy failures
 % set the solver parameters
 newt_maxit = 20;           % max number of Newton iterations
 newt_tol   = 1e-10;        % Newton solver tolerance
-newt_alpha = 1;            % Newton damping parameter
 h_reduce   = 0.1;          % failed step reduction factor 
 h_safety   = 0.9;          % adaptivity safety factor
 h_growth   = 10;           % adaptivity growth bound
@@ -96,6 +95,10 @@ Fdata.Jname = Jfcn;   % ODE RHS Jacobian function name
 Fdata.B     = B;      % Butcher table 
 Fdata.s     = s;      % number of stages
 
+% set function names for Newton solver residual/Jacobian
+Fun = 'F_DIRK';
+Jac = 'A_DIRK';
+
 % set initial time step size
 h = hmin;
 
@@ -103,7 +106,7 @@ h = hmin;
 nsteps = 0;
 lits   = 0;
 
-% iterate over time steps
+% iterate over output time steps
 for tstep = 2:length(tvals)
 
    % loop over internal time steps to get to desired output time
@@ -146,8 +149,7 @@ for tstep = 2:length(tvals)
          end
          
          % call Newton solver to compute new stage solution
-         [Ynew,lin,ierr] = newton_damped('F_DIRK', 'A_DIRK', Yguess, Fdata, ...
-                                         newt_tol, newt_maxit, newt_alpha);
+         [Ynew,lin,ierr] = newton(Fun, Jac, Yguess, Fdata, newt_tol, newt_maxit);
 
          % increment total linear solver statistics
          lits = lits + lin;

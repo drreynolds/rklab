@@ -98,7 +98,7 @@ h = hmin;
 % initialize work counter
 nsteps = 0;
 
-% iterate over time steps
+% iterate over output time steps
 for tstep = 2:length(tvals)
 
    % loop over internal time steps to get to desired output time
