@@ -85,7 +85,8 @@ a_fails = 0;   % total accuracy failures
 
 % set the solver parameters
 newt_maxit = 20;           % max number of Newton iterations
-newt_tol   = 1e-10;        % Newton solver tolerance
+newt_ftol  = 1e-10;        % Newton solver residual tolerance
+newt_stol  = 1e-10;        % Newton solver solution tolerance
 h_reduce   = 0.1;          % failed step reduction factor 
 h_safety   = 0.9;          % adaptivity safety factor
 h_growth   = 10;           % adaptivity growth bound
@@ -143,7 +144,8 @@ for tstep = 2:length(tvals)
       end
 
       % call Newton solver to update solution in time
-      [z,lin,ierr] = newton(Fun, Jac, z, Fdata, newt_tol, newt_maxit);
+      [z,lin,ierr] = newton(Fun, Jac, z, Fdata, newt_ftol, ...
+                            newt_stol, newt_maxit);
                                    
 
       % increment total linear solver and step statistics 
@@ -176,7 +178,8 @@ for tstep = 2:length(tvals)
          end
          
          % call Newton solver to update solution in time
-         [z,lin,ierr] = newton(Fun, Jac, z, Fdata, newt_tol, newt_maxit);
+         [z,lin,ierr] = newton(Fun, Jac, z, Fdata, newt_ftol, ...
+                               newt_stol, newt_maxit);
          
          % increment total linear solver and step statistics
          lits   = lits + lin;
@@ -208,7 +211,8 @@ for tstep = 2:length(tvals)
             end
             
             % call Newton solver to update solution in time
-            [z,lin,ierr] = newton(Fun, Jac, z, Fdata, newt_tol, newt_maxit);
+            [z,lin,ierr] = newton(Fun, Jac, z, Fdata, newt_ftol, ...
+                                  newt_stol, newt_maxit);
          
             % increment total linear solver and step statistics
             lits   = lits + lin;

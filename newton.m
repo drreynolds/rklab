@@ -1,5 +1,5 @@
-function [y,lits,ierr] = newton(Fcn, Afn, y0, Fdata, tol, maxit)
-% usage: [y,lits,ierr] = newton(Fcn, Afn, y0, Fdata, tol, maxit)
+function [y,lits,ierr] = newton(Fcn, Afn, y0, Fdata, ftol, stol, maxit)
+% usage: [y,lits,ierr] = newton(Fcn, Afn, y0, Fdata, ftol, stol, maxit)
 %
 % Newton solver for the root-finding problem defined by the function Fcn,
 %     F(y,Fdata) = 0
@@ -13,8 +13,8 @@ function [y,lits,ierr] = newton(Fcn, Afn, y0, Fdata, tol, maxit)
 %                as F.
 %          y0 = initial guess
 %          Fdata = structure containing extra information for evaluating F.
-%          tol = desired nonlinear tolerance -- used both for
-%                ||F(y)|| and ||s||
+%          ftol = desired nonlinear residual tolerance, ||F(y)|| < ftol
+%          stol = desired solution tolerance, ||s|| < stol
 %          maxit = maximum allowed iterations
 % Outputs: y = solution to root-finding problem
 %          lits = total # of linear solves taken
@@ -30,27 +30,31 @@ function [y,lits,ierr] = newton(Fcn, Afn, y0, Fdata, tol, maxit)
 if (maxit < 1) 
    error('newton error: requires at least 1 iteration (maxit)');
 end
-if (tol <= 0) 
-   error('newton error: tolerance must be positive (tol)');
+if (stol <= 0) 
+   error('newton error: tolerance must be positive (stol)');
+end
+if (ftol <= 0) 
+   error('newton error: tolerance must be positive (ftol)');
 end
 
 % initialize result, increment vector, residual, statistics
 y = y0;
 s = ones(size(y));
-F = ones(size(y));
 lits = 0;
 
 % perform iterations
 for i=1:maxit
-   
-   % check residual for stopping
-   if ((norm(s,inf) < tol) | (norm(F,inf) < tol))
+
+   % compute residual at current guess
+   F = feval(Fcn,y,Fdata);
+
+   % check residual and increment for stopping
+   if ((norm(s,inf) < stol) | (norm(F,inf) < ftol))
       ierr = 0;
       return
    end
    
-   % compute residual, Jacobian
-   F = feval(Fcn,y,Fdata);
+   % compute Jacobian
    A = feval(Afn,y,Fdata);
    
    % perform Newton update
