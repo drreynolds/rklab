@@ -36,6 +36,7 @@ function B = butcher(method_name)
 %    ERK-2-2                            q=3, s=2
 %    ERK-3-3                            q=3, s=3
 %    Ascher(2,3,3)-ERK                  q=3, s=3
+%    SSPRK(3,3)-Shu-Osher-ERK           q=3, s=3
 %    Cooper4-ERK                        q=3, s=4
 %    Ascher(3,4,3)-ERK                  q=3, s=4
 %    Ascher(4,4,3)-ERK                  q=3, s=5
@@ -53,15 +54,18 @@ function B = butcher(method_name)
 %
 % Diagonally implicit:
 %    SDIRK-2-2                          q=2, s=2
+%    SDIRK-2-1                          q=2, s=2, p=1
 %    Ascher(2,3,2)-SDIRK                q=2, s=2
 %    Ascher(2,2,2)-SDIRK                q=2, s=2
-%    TRBDF2-ESDIRK (*)                  q=3, s=3, p=2
-%    Billington-SDIRK (*)               q=3, s=3, p=2
+%    Billington-SDIRK (*)               q=2, s=3, p=3
+%    TRBDF2-ESDIRK (*)                  q=2, s=3, p=3
 %    Kvaerno(4,2,3)-ESDIRK (*)          q=3, s=4, p=2
 %    ARK3(2)4L[2]SA-ESDIRK (*)          q=3, s=4, p=2
 %    SDIRK-5-4 (*)                      q=3, s=5, p=3
 %    Ascher(2,3,3)-SDIRK                q=3, s=2
 %    Ascher(3,4,3)-SDIRK                q=3, s=3
+%    EDIRK-3-3 pairs with SSPRK(3,3)    q=3, s=3
+%    ESDIRK-3-3 paris with SSPRK(3,3)   1=3, s=3
 %    Ascher(4,4,3)-SDIRK                q=3, s=4
 %    Cooper4-ESDIRK                     q=3, s=4
 %    TRX2-ESDIRK (*)                    q=4, s=3, p=2
@@ -106,11 +110,13 @@ function B = butcher(method_name)
 %    RadauIIA-5-9-IRK                   q=9, s=5
 %    Gauss-6-12-IRK                     q=12, s=6
 %
-% Daniel R. Reynolds
-% Department of Mathematics
-% Southern Methodist University
-% August 2012
-% All Rights Reserved
+%------------------------------------------------------------
+% Programmer(s):  Daniel R. Reynolds @ SMU
+%------------------------------------------------------------
+% Copyright (c) 2013, Southern Methodist University.
+% All rights reserved.
+% For details, see the LICENSE file.
+%------------------------------------------------------------
 
 % set the butcher table
 if (strcmp(method_name,'ARK3(2)4L[2]SA-ERK'))
@@ -273,19 +279,20 @@ elseif (strcmp(method_name,'Ascher(2,3,3)-ERK'))
    gamma = (3 + sqrt(3))/6;
    c = [0; gamma; 1-gamma];
    b = [0, 1/2, 1/2];
-   A = [0, 0, 0;
-      gamma, 0, 0;
-      gamma-1, 2*(1-gamma), 0];
+   A = [0,       0,           0;
+        gamma,   0,           0;
+        gamma-1, 2*(1-gamma), 0];
    q = 3;
    B = [c, A; q, b];
    
 elseif (strcmp(method_name,'Ascher(2,3,3)-SDIRK'))
 
    gamma = (3 + sqrt(3))/6;
-   c = [gamma; 1-gamma];
-   b = [1/2, 1/2];
-   A = [gamma, 0;
-        1-2*gamma, gamma];
+   c = [0; gamma; 1-gamma];
+   b = [0, 1/2, 1/2];
+   A = [0, 0,         0;
+        0, gamma,     0;
+        0, 1-2*gamma, gamma];
    q = 3;
    B = [c, A; q, b];
    
@@ -304,10 +311,11 @@ elseif (strcmp(method_name,'Ascher(2,3,2)-ERK'))
 elseif (strcmp(method_name,'Ascher(2,3,2)-SDIRK'))
 
    gamma = (2-sqrt(2))/2;
-   c = [gamma; 1];
-   b = [1-gamma, gamma];
-   A = [gamma, 0;
-        1-gamma, gamma];
+   c = [0; gamma; 1];
+   b = [0, 1-gamma, gamma];
+   A = [0, 0,       0;
+        0, gamma,   0;
+        0, 1-gamma, gamma];
    q = 2;
    B = [c, A; q, b];
    
@@ -326,33 +334,58 @@ elseif (strcmp(method_name,'Ascher(2,2,2)-ERK'))
 elseif (strcmp(method_name,'Ascher(2,2,2)-SDIRK'))
 
    gamma = (2-sqrt(2))/2;
-   c = [gamma; 1];
-   b = [1-gamma, gamma];
-   A = [gamma, 0;
-        1-gamma, gamma];
+   c = [0; gamma; 1];
+   b = [0, 1-gamma, gamma];
+   A = [0, 0,       0;
+        0, gamma,   0;
+        0, 1-gamma, gamma];
    q = 2;
    B = [c, A; q, b];
    
 elseif (strcmp(method_name,'Ascher(3,4,3)-ERK'))
 
-   gamma = 0.4358665215;
+   gamma  = 0.4358665215084590;
+   gamma2 = gamma^2;
+
+   b1 = -1.5 * gamma2 + 4.0 * gamma - 0.25;
+   b2 =  1.5 * gamma2 - 5.0 * gamma + 1.25;
+
+   a42 = 0.5529291480359398;
+   a43 = 0.5529291480359398;
+
+   a31 = (1.0 - 4.5 * gamma + 1.5 * gamma2) * a42 ...
+       + (2.75 - 10.5 * gamma + 3.75 * gamma2) * a43 ...
+       - 3.5 + 13 * gamma - 4.5 * gamma2;
+  
+   a32 = (-1.0 + 4.5 * gamma - 1.5 * gamma2) * a42 ...
+       + (-2.75 + 10.5 * gamma - 3.75 * gamma2) * a43 ...
+       + 4.0 - 12.5 * gamma + 4.5 * gamma2;
+
+   a41 = 1.0 - a42 - a43;
+
    c = [0; gamma; (1+gamma)/2; 1];
-   b = [0, -3/2*gamma^2+4*gamma-1/4, 3/2*gamma^2-5*gamma+5/4, gamma];
-   A = [0, 0, 0, 0;
-        gamma, 0, 0, 0;
-	0.3212788860, 0.3966543747, 0, 0;
-        -0.105858296, 0.5529291479, 0.5529291479, 0];
+   b = [0, b1, b2, gamma];
+   A = [0,     0,   0,   0;
+	gamma, 0,   0,   0;
+	a31,   a32, 0,   0;
+	a41,   a42, a43, 0];
    q = 3;
    B = [c, A; q, b];
    
 elseif (strcmp(method_name,'Ascher(3,4,3)-SDIRK'))
 
-   gamma = 0.4358665215;
-   c = [gamma; (1+gamma)/2; 1];
-   b = [-3/2*gamma^2+4*gamma-1/4, 3/2*gamma^2-5*gamma+5/4, gamma];
-   A = [gamma, 0, 0;
-        (1-gamma)/2, gamma, 0;
-        -3/2*gamma^2 + 4*gamma - 1/4, 3/2*gamma^2-5*gamma+5/4, gamma];
+   gamma  = 0.4358665215084590;
+   gamma2 = gamma^2;
+
+   b1 = -1.5 * gamma2 + 4.0 * gamma - 0.25;
+   b2 =  1.5 * gamma2 - 5.0 * gamma + 1.25;
+
+   c = [0; gamma; (1+gamma)/2; 1];
+   b = [0, b1, b2, gamma];
+   A = [0,     0,           0,     0;
+	0, gamma,           0,     0;
+        0, (1-gamma)/2, gamma,     0;
+        0, b1,             b2, gamma];
    q = 3;
    B = [c, A; q, b];
    
@@ -360,11 +393,11 @@ elseif (strcmp(method_name,'Ascher(4,4,3)-ERK'))
 
    c = [0; 1/2; 2/3; 1/2; 1];
    b = [1/4, 7/4, 3/4, -7/4, 0];
-   A = [0, 0, 0, 0, 0;
-        1/2, 0, 0, 0, 0;
-	11/18, 1/18, 0, 0, 0;
-	5/6, -5/6, 1/2, 0, 0;
-	1/4, 7/4, 3/4, -7/4, 0];
+   A = [    0,    0,   0,    0, 0;
+          1/2,    0,   0,    0, 0;
+	    11/18, 1/18,   0,    0, 0;
+	      5/6, -5/6, 1/2,    0, 0;
+	      1/4,  7/4, 3/4, -7/4, 0];
    q = 3;
    B = [c, A; q, b];
    
@@ -372,10 +405,10 @@ elseif (strcmp(method_name,'Ascher(4,4,3)-SDIRK'))
 
    c = [1/2; 2/3; 1/2; 1];
    b = [3/2, -3/2, 1/2, 1/2];
-   A = [1/2, 0, 0, 0;
-        1/6, 1/2, 0, 0;
-	-1/2, 1/2, 1/2, 0;
-	3/2, -3/2, 1/2, 1/2];
+   A = [ 1/2,    0,   0,   0;
+         1/6,  1/2,   0,   0;
+	    -1/2,  1/2, 1/2,   0;
+	     3/2, -3/2, 1/2, 1/2];
    q = 3;
    B = [c, A; q, b];
    
@@ -499,11 +532,15 @@ elseif (strcmp(method_name,'TRBDF2-ESDIRK'))
    A = [0, 0, 0; ...
       (2-sqrt(2))/2, (2-sqrt(2))/2, 0; ...
       sqrt(2)/4, sqrt(2)/4, (2-sqrt(2))/2];
-   b = [(1-sqrt(2)/4)/3, (3*sqrt(2)/4+1)/3, (2-sqrt(2))/6];
-   b2 = [sqrt(2)/4, sqrt(2)/4, (2-sqrt(2))/2];
+% $$$    b = [(1-sqrt(2)/4)/3, (3*sqrt(2)/4+1)/3, (2-sqrt(2))/6];
+% $$$    b2 = [sqrt(2)/4, sqrt(2)/4, (2-sqrt(2))/2];
+   b = [sqrt(2)/4, sqrt(2)/4, (2-sqrt(2))/2];
+   b2 = [(1-sqrt(2)/4)/3, (3*sqrt(2)/4+1)/3, (2-sqrt(2))/6];
    c = [0; 2-sqrt(2); 1];
-   q = 3;
-   p = 2;
+% $$$    q = 3;
+% $$$    p = 2;
+   q = 2;
+   p = 3;
    B = [c, A; q, b; p, b2];
 
 elseif (strcmp(method_name,'TRX2-ESDIRK'))
@@ -520,11 +557,15 @@ elseif (strcmp(method_name,'Billington-SDIRK'))
 
    A = [0.292893218813, 0, 0; 0.798989873223, 0.292893218813, 0; ...
         0.740789228841, 0.259210771159, 0.292893218813];
-   b = [ 0.691665115992, 0.503597029883, -0.195262145876];
-   b2 = [ 0.740789228840, 0.259210771159, 0];
+% $$$    b = [ 0.691665115992, 0.503597029883, -0.195262145876];
+% $$$    b2 = [ 0.740789228840, 0.259210771159, 0];
+   b = [ 0.740789228840, 0.259210771159, 0];
+   b2 = [ 0.691665115992, 0.503597029883, -0.195262145876];
    c = [ 0.292893218813; 1.091883092037; 1.292893218813];
-   q = 3;
-   p = 2;
+% $$$    q = 3;
+% $$$    p = 2;
+   q = 2;
+   p = 3;
    B = [c, A; q, b; p, b2];
 
 elseif (strcmp(method_name,'Cash(5,2,4)-SDIRK'))
@@ -727,6 +768,16 @@ elseif (strcmp(method_name,'SDIRK-2-2'))
    c = [ 1-1/sqrt(2); 1];
    q = 2;
    B = [c, A; q, b];
+
+elseif (strcmp(method_name,'SDIRK-2-1'))
+   
+   A = [1, 0; -1, 1];
+   b = [ 1/2, 1/2];
+   b2 = [ 1, 0];
+   c = [ 1; 0];
+   q = 2;
+   p = 1;
+   B = [c, A; q, b; p, b2];
 
 elseif (strcmp(method_name,'IRK-1-1'))
    
@@ -1042,6 +1093,293 @@ elseif (strcmp(method_name,'Gauss-6-12-IRK'))
       0.38069040695840154764351126459587; 0.61930959304159845235648873540413;
       0.83060469323313224077054428562406; 0.9662347571015760250290327348921];
    q = 12;
+   B = [c, A; q, b];
+
+elseif (strcmp(method_name,'ARK(2,3,2)-ERK'))
+   
+   gamma = 1 - 1/sqrt(2);
+   alpha = 1/6 * (3+2*sqrt(2));
+   delta = 1/(2*sqrt(2));
+   twogamma = 2 * gamma;
+   
+   A = [0,         0,     0; ...
+        twogamma,  0,     0; ...
+        1 - alpha, alpha, 0];
+   b = [delta, delta, gamma];
+   c = [0; twogamma; 1]; 
+   q = 2;
+   B = [c, A; q, b];
+
+elseif (strcmp(method_name,'ARK(2,3,2)-SDIRK'))
+   
+   gamma = 1 - 1/sqrt(2);
+   alpha = 1/6 * (3+2*sqrt(2));
+   delta = 1/(2*sqrt(2));
+   twogamma = 2 * gamma;
+   
+   A = [0,     0,     0; ...
+        gamma, gamma, 0; ...
+        delta, delta, gamma];
+   b = [delta, delta, gamma];
+   c = [0; twogamma; 1]; 
+   q = 2;
+   B = [c, A; q, b];
+
+elseif (strcmp(method_name,'SSP2(2,2,2)-ERK'))
+   
+   A = [0, 0; ...
+        1, 0];
+   b = [1/2, 1/2];
+   c = [0; 1]; 
+   q = 2;
+   B = [c, A; q, b];
+
+elseif (strcmp(method_name,'SSP2(2,2,2)-SDIRK'))
+   
+   gamma = 1 - 1/sqrt(2);
+   
+   A = [gamma,       0;...
+        1 - 2*gamma, gamma];
+   b = [1/2, 1/2];
+   c = [gamma; 1 - gamma];
+   q = 2;
+   B = [c, A; q, b];
+
+elseif (strcmp(method_name,'SSP2(3,3,2)-lpm1-ERK'))
+   
+   A = [  0,   0, 0;...
+        1/2,   0, 0;...
+        1/2, 1/2, 0];
+   b = [1/3, 1/3, 1/3];
+   c = [0; 1/2; 1]; 
+   q = 2;
+   B = [c, A; q, b];
+
+elseif (strcmp(method_name,'SSP2(3,3,2)-lpm1-SDIRK'))
+      
+   A = [         2/11,    0,    0;...
+            2829/9317, 2/11,    0;...
+        148529/428582, 7/23, 2/11];
+   b = [1/3, 1/3, 1/3];
+   c = [2/11; 4523/9317; 15517/18634];
+   q = 2;
+   B = [c, A; q, b];
+   
+elseif (strcmp(method_name,'SSP2(3,3,2)-lpm2-ERK'))
+   
+   A = [  0,   0, 0;...
+        1/2,   0, 0;...
+        1/2, 1/2, 0];
+   b = [1/3, 1/3, 1/3];
+   c = [0; 1/2; 1]; 
+   q = 2;
+   B = [c, A; q, b];
+
+elseif (strcmp(method_name,'SSP2(3,3,2)-lpm2-SDIRK'))
+      
+   A = [        2/11,     0,    0;...
+          2583/13310,  2/11,    0;...
+        39731/139755, 10/21, 2/11];
+   b = [1/3, 1/3, 1/3];
+   c = [2/11; 5003/13310; 6271/6655];
+   q = 2;
+   B = [c, A; q, b];
+
+elseif (strcmp(method_name,'SSP2(3,3,2)-lpum-ERK'))
+   
+   A = [  0,   0, 0;...
+        1/2,   0, 0;...
+        1/2, 1/2, 0];
+   b = [1/3, 1/3, 1/3];
+   c = [0; 1/2; 1]; 
+   q = 2;
+   B = [c, A; q, b];
+
+elseif (strcmp(method_name,'SSP2(3,3,2)-lpum-SDIRK'))
+      
+   A = [        2/11,      0,    0;...
+              41/154,   2/11,    0;...
+             289/847, 42/121, 2/11];
+   b = [1/3, 1/3, 1/3];
+   c = [2/11; 69/154; 67/77];
+   q = 2;
+   B = [c, A; q, b];
+   
+elseif (strcmp(method_name,'SSP2(3,3,2)-lspum-ERK'))
+   
+   A = [    0,     0, 0;...
+          5/6,     0, 0;...
+        11/24, 11/24, 0];
+   b = [24/55, 1/5, 4/11];
+   c = [0; 5/6; 11/12]; 
+   q = 2;
+   B = [c, A; q, b];
+
+elseif (strcmp(method_name,'SSP2(3,3,2)-lspum-SDIRK'))
+      
+   A = [        2/11,      0,    0;...
+             205/462,   2/11,    0;...
+           2033/4620, 21/110, 2/11];
+   b = [24/55, 1/5, 4/11];
+   c = [2/11; 289/462; 751/924];
+   q = 2;
+   B = [c, A; q, b];
+   
+elseif (strcmp(method_name,'SSP2(3,3,2)-a-ERK'))
+   
+   A = [  0,   0, 0;...
+        1/2,   0, 0;...
+        1/2, 1/2, 0];
+   b = [1/3, 1/3, 1/3];
+   c = [0; 1/2; 1.0]; 
+   q = 2;
+   B = [c, A; q, b];
+
+elseif (strcmp(method_name,'SSP2(3,3,2)-a-DIRK'))
+      
+   A = [1/4,   0,   0;...
+          0, 1/4,   0;...
+        1/3, 1/3, 1/3];
+   b = [1/3, 1/3, 1/3];
+   c = [1/4; 1/4; 1];
+   q = 2;
+   B = [c, A; q, b];
+   
+elseif (strcmp(method_name,'SSP2(3,3,2)-b-ERK'))
+   
+   A = [  0,   0, 0;...
+        1/2,   0, 0;...
+        1/2, 1/2, 0];
+   b = [1/3, 1/3, 1/3];
+   c = [0; 1/2; 1.0]; 
+   q = 2;
+   B = [c, A; q, b];
+
+elseif (strcmp(method_name,'SSP2(3,3,2)-b-DIRK'))
+      
+   A = [ 1/5,   0,   0;...
+        1/10, 1/5,   0;...
+         1/3, 1/3, 1/3];
+   b = [1/3, 1/3, 1/3];
+   c = [1/5; 3/10; 1];
+   q = 2;
+   B = [c, A; q, b];
+   
+elseif (strcmp(method_name,'SSP3(3,3,2)-ERK'))
+   
+   A = [  0,   0, 0;...
+          1,   0, 0;...
+        1/4, 1/4, 0];
+   b = [1/6, 1/6, 2/3];
+   c = [0; 1; 1/2]; 
+   q = 2;
+   B = [c, A; q, b];
+   
+elseif (strcmp(method_name,'SSP3(3,3,2)-SDIRK'))
+   
+   gamma = 1 - 1/sqrt(2);
+   A = [      gamma,     0,     0;...
+        1 - 2*gamma, gamma,     0;...
+        1/2 - gamma,     0, gamma];
+   b = [1/6, 1/6, 2/3];
+   c = [gamma; 1-gamma; 1/2]; 
+   q = 2;
+   B = [c, A; q, b];
+
+elseif (strcmp(method_name,'SSP3(3,3,3)-ERK'))
+   
+   A = [  0,   0, 0;...
+          1,   0, 0;...
+        1/4, 1/4, 0];
+   b = [1/6, 1/6, 2/3];
+   c = [0; 1; 1/2]; 
+   q = 2;
+   B = [c, A; q, b];
+   
+elseif (strcmp(method_name,'SSP3(3,3,3)-ESDIRK'))
+   
+   A = [    0,    0,    0;...
+        14/15, 1/15,    0;...
+         7/30,  1/5, 1/15];
+   b = [1/6, 1/6, 2/3];
+   c = [0; 1; 1/2]; 
+   q = 2;
+   B = [c, A; q, b];
+
+elseif (strcmp(method_name,'SSP3(4,3,3)-ERK'))
+   
+   A = [  0,   0,   0, 0;...
+          0,   0,   0, 0;...
+          0,   1,   0, 0;...
+          0, 1/4, 1/4, 0];
+   b = [0, 1/6, 1/6, 2/3];
+   c = [0;   0;   1; 1/2]; 
+   q = 2;
+   B = [c, A; q, b];
+   
+elseif (strcmp(method_name,'SSP3(4,3,3)-SDIRK'))
+   
+   alpha = 0.24169426078821; 
+   beta  = 0.06042356519705;
+   eta   = 0.12915286960590;
+   delta = 0.5 - beta - eta - alpha;    
+
+   A = [ alpha,       0,     0      0;...
+        -alpha,   alpha,     0,     0;...
+             0, 1-alpha, alpha,     0;
+	  beta,     eta, delta, alpha];
+   b = [0,     1/6, 1/6, 2/3];
+   c = [alpha;   0;   1; 1/2]; 
+   q = 2;
+   B = [c, A; q, b];
+
+elseif (strcmp(method_name,'SSPRK(3,3)-Shu-Osher-ERK'))
+
+   A = [ 0,   0,   0;...
+         1,   0,   0;...
+         1/4, 1/4, 0];
+   b = [ 1/6, 1/6, 2/3];
+   c = [ 0;   1;   1/2];
+   q = 3;
+   B = [c, A; q, b];
+
+elseif (strcmp(method_name,'EDIRK-3-3'))
+
+   % Pairs with SSPRK(3,3)-Shu-Osher-ERK to make 3rd order IMEX method
+   %
+   % General form (with free parameter beta):
+   %
+   % gamma = (2*beta^2 - (3/2)*beta + 1/3)/(2-4*beta);
+   % A = [ 0,              0,                0;...
+   %       4*gamma+2*beta, 1-4*gamma-2*beta, 0;...
+   %       1/2-beta-gamma, gamma,            beta];
+
+   beta  = 2/3;
+   gamma = -1/3;
+
+   A = [ 0,   0,    0;...
+         0,   1,    0 ;...
+         1/6, -1/3, 2/3];
+   b = [ 1/6, 1/6, 2/3];
+   c = [ 0;   1;   1/2];
+   q = 3;
+   B = [c, A; q, b];
+
+elseif (strcmp(method_name,'ESDIRK-3-3'))
+
+   % Pairs with SSPRK(3,3)-Shu-Osher-ERK to make 3rd order IMEX method
+   %
+   % In general gamma = (2*beta^2 - (3/2)*beta + 1/3)/(2-4*beta);
+
+   beta  = sqrt(3)/6 + 1/2;
+   gamma = (-1/8)*(sqrt(3)+1);
+
+   A = [ 0,              0,                0;...
+         4*gamma+2*beta, 1-4*gamma-2*beta, 0;...
+         1/2-beta-gamma, gamma,            beta];
+   b = [ 1/6, 1/6, 2/3];
+   c = [ 0;   1;   1/2];
+   q = 3;
    B = [c, A; q, b];
 
 else
