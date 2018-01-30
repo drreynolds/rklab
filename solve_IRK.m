@@ -140,7 +140,7 @@ for tstep = 2:length(tvals)
       % set Newton initial guesses as previous step solution
       z = zeros(s*m,1);
       for i = 0:s-1
-	 z(i*m+1:(i+1)*m) = Ynew;
+         z(i*m+1:(i+1)*m) = Ynew;
       end
 
       % call Newton solver to update solution in time

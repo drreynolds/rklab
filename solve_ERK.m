@@ -122,14 +122,14 @@ for tstep = 2:length(tvals)
       
       % loop over stages
       for stage=1:s
-	 
-	 % construct stage solution
-	 %    zi = y_n + h*sum_{j=1}^{i-1} (A(i,j)*f(zj))
-	 z(:,stage) = Y0;
-	 for j=1:stage-1
-	    z(:,stage) = z(:,stage) + h*A(stage,j)*feval(fcn,t+h*c(j),z(:,j));
-	 end
-	 
+         
+         % construct stage solution
+         %    zi = y_n + h*sum_{j=1}^{i-1} (A(i,j)*f(zj))
+         z(:,stage) = Y0;
+         for j=1:stage-1
+            z(:,stage) = z(:,stage) + h*A(stage,j)*feval(fcn,t+h*c(j),z(:,j));
+         end
+         
       end
 
       % increment number of internal time steps taken
@@ -141,69 +141,69 @@ for tstep = 2:length(tvals)
       % if time step adaptivity enabled, check step accuracy
       if (embedded)
 
-	 % estimate error in current step
-	 err_step = max(norm((Ynew - Y2)./(rtol*Ynew + atol),inf), eps);
-	 
-	 % if error too high, flag step as a failure (will be recomputed)
-         if (err_step > ERRTOL*ONEPSM) 
-	    a_fails = a_fails + 1;
-	    st_fail = 1;
-	 end
-	 
+         % estimate error in current step
+         err_step = max(norm((Ynew - Y2)./(rtol*Ynew + atol),inf), eps);
+         
+         % if error too high, flag step as a failure (will be recomputed)
+        if (err_step > ERRTOL*ONEPSM) 
+           a_fails = a_fails + 1;
+           st_fail = 1;
+        end
+         
       end
       
       % if step was successful (i.e. error acceptable)
       if (st_fail == 0) 
       
          % update solution and time for last successful step
-	 Y0 = Ynew;
-	 t  = t + h;
+         Y0 = Ynew;
+         t  = t + h;
       
          % for embedded methods, use error estimate to adapt the time step
-	 if (embedded) 
+         if (embedded) 
             
-	    h_old = h;
-	    if (err_step == 0.0)     % no error, set max possible
+            h_old = h;
+            if (err_step == 0.0)     % no error, set max possible
                h = tvals(end)-t;
-	    else                     % set next h (I-controller)
-	       h = h_safety * h_old * err_step^(-1.0/p);
-	    end
+            else                     % set next h (I-controller)
+               h = h_safety * h_old * err_step^(-1.0/p);
+            end
 
             % enforce maximum growth rate on step sizes
-	    h = min(h_growth*h_old, h);
+            h = min(h_growth*h_old, h);
             
-	 % otherwise, just use the fixed minimum input step size
-	 else
-	    h = hmin;
-	 end
-	 
-	 % limit time step by explicit stability condition
-	 hstab = h_stable * feval(StabFn, t, Ynew);
+         % otherwise, just use the fixed minimum input step size
+         else
+            h = hmin;
+         end
+         
+         % limit time step by explicit stability condition
+         hstab = h_stable * feval(StabFn, t, Ynew);
 
          % keep statistics on how many steps are accuracy vs stability limited
-	 if (h < hstab)
-	    h_a = h_a + 1;
-	 else
-	    h_s = h_s + 1;
-	 end
-	 h = min([h, hstab]);
-	 
-      % if error test failed
-      else
-
-         % if already at minimum step, just return with failure
-         if (h <= hmin) 
-            fprintf('Cannot achieve desired accuracy.\n');
-            fprintf('Consider reducing hmin or increasing rtol.\n');
-            return
+         if (h < hstab)
+            h_a = h_a + 1;
+         else
+            h_s = h_s + 1;
          end
+         h = min([h, hstab]);
+         
+     % if error test failed
+     else
 
-         % otherwise, reset guess, reduce time step, retry solve
-	 Ynew = Y0;
-	 h    = h * h_reduce;
-	 h_a  = h_a + 1;
-	 
-      end  % end logic tests for step success/failure
+        % if already at minimum step, just return with failure 
+        if (h <= hmin) 
+           fprintf('Cannot achieve desired accuracy.\n');
+           fprintf('Consider reducing hmin or increasing rtol.\n');
+           return
+        end
+
+        % otherwise, reset guess, reduce time step, retry solve
+        Ynew = Y0;
+        h    = h * h_reduce;
+        h_a  = h_a + 1;
+         
+     end  % end logic tests for step success/failure
       
    end  % end while loop attempting to solve steps to next output time
 
