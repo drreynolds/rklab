@@ -33,9 +33,10 @@ function B = butcher(method_name)
 %    ARK3(2)4L[2]SA-ERK (*)             q=3, s=4, p=2
 %    Bogacki-Shampine-ERK (*)           q=3, s=4, p=2
 %    Cash-Karp-ERK (*)                  q=3, s=6, p=3
-%    ERK-2-2                            q=3, s=2
+%    ERK-2-2                            q=2, s=2
 %    ERK-3-3                            q=3, s=3
 %    Ascher(2,3,3)-ERK                  q=3, s=3
+%    SSPRK(3,3)-Shu-Osher-ERK           q=3, s=3
 %    Cooper4-ERK                        q=3, s=4
 %    Ascher(3,4,3)-ERK                  q=3, s=4
 %    Ascher(4,4,3)-ERK                  q=3, s=5
@@ -63,6 +64,8 @@ function B = butcher(method_name)
 %    SDIRK-5-4 (*)                      q=3, s=5, p=3
 %    Ascher(2,3,3)-SDIRK                q=3, s=2
 %    Ascher(3,4,3)-SDIRK                q=3, s=3
+%    EDIRK-3-3 pairs with SSPRK(3,3)    q=3, s=3
+%    ESDIRK-3-3 paris with SSPRK(3,3)   1=3, s=3
 %    Ascher(4,4,3)-SDIRK                q=3, s=4
 %    Cooper4-ESDIRK                     q=3, s=4
 %    TRX2-ESDIRK (*)                    q=4, s=3, p=2
@@ -107,11 +110,13 @@ function B = butcher(method_name)
 %    RadauIIA-5-9-IRK                   q=9, s=5
 %    Gauss-6-12-IRK                     q=12, s=6
 %
-% Daniel R. Reynolds
-% Department of Mathematics
-% Southern Methodist University
-% August 2012
-% All Rights Reserved
+%------------------------------------------------------------
+% Programmer(s):  Daniel R. Reynolds @ SMU
+%------------------------------------------------------------
+% Copyright (c) 2013, Southern Methodist University.
+% All rights reserved.
+% For details, see the LICENSE file.
+%------------------------------------------------------------
 
 % set the butcher table
 if (strcmp(method_name,'ARK3(2)4L[2]SA-ERK'))
@@ -663,7 +668,7 @@ elseif (strcmp(method_name,'ERK-2-2'))
    A = [ 0, 0; 2/3, 0];
    b = [ 1/4, 3/4];
    c = [ 0; 2/3];
-   q = 3;
+   q = 2;
    B = [c, A; q, b];
 
 elseif (strcmp(method_name,'ERK-3-3'))
@@ -672,7 +677,7 @@ elseif (strcmp(method_name,'ERK-3-3'))
    b = [ 1/6, 2/3, 1/6];
    b2 = [0, 1, 0];
    c = [ 0; 1/2; 1];
-   q = 4;
+   q = 3;
    p = 2;
    B = [c, A; q, b; p, b2];
 
@@ -1319,7 +1324,56 @@ elseif (strcmp(method_name,'SSP3(4,3,3)-SDIRK'))
    c = [alpha;   0;   1; 1/2]; 
    q = 2;
    B = [c, A; q, b];
-  
+
+elseif (strcmp(method_name,'SSPRK(3,3)-Shu-Osher-ERK'))
+
+   A = [ 0,   0,   0;...
+         1,   0,   0;...
+         1/4, 1/4, 0];
+   b = [ 1/6, 1/6, 2/3];
+   c = [ 0;   1;   1/2];
+   q = 3;
+   B = [c, A; q, b];
+
+elseif (strcmp(method_name,'EDIRK-3-3'))
+
+   % Pairs with SSPRK(3,3)-Shu-Osher-ERK to make 3rd order IMEX method
+   %
+   % General form (with free parameter beta):
+   %
+   % gamma = (2*beta^2 - (3/2)*beta + 1/3)/(2-4*beta);
+   % A = [ 0,              0,                0;...
+   %       4*gamma+2*beta, 1-4*gamma-2*beta, 0;...
+   %       1/2-beta-gamma, gamma,            beta];
+
+   beta  = 2/3;
+   gamma = -1/3;
+
+   A = [ 0,   0,    0;...
+         0,   1,    0 ;...
+         1/6, -1/3, 2/3];
+   b = [ 1/6, 1/6, 2/3];
+   c = [ 0;   1;   1/2];
+   q = 3;
+   B = [c, A; q, b];
+
+elseif (strcmp(method_name,'ESDIRK-3-3'))
+
+   % Pairs with SSPRK(3,3)-Shu-Osher-ERK to make 3rd order IMEX method
+   %
+   % In general gamma = (2*beta^2 - (3/2)*beta + 1/3)/(2-4*beta);
+
+   beta  = sqrt(3)/6 + 1/2;
+   gamma = (-1/8)*(sqrt(3)+1);
+
+   A = [ 0,              0,                0;...
+         4*gamma+2*beta, 1-4*gamma-2*beta, 0;...
+         1/2-beta-gamma, gamma,            beta];
+   b = [ 1/6, 1/6, 2/3];
+   c = [ 0;   1;   1/2];
+   q = 3;
+   B = [c, A; q, b];
+
 else
    
    B = 0;
