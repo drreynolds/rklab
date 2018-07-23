@@ -1,13 +1,13 @@
-function [Y,m] = step_MIS(fs,ff,Jf,t0,Y0,Bo,Bi,hs,hf)
-% usage: [Y,m] = step_MIS(fs,ff,Jf,t0,Y0,Bo,Bi,hs,hf)
+function [Y,m] = step_RMIS(fs,ff,Jf,t0,Y0,Bo,Bi,hs,hf)
+% usage: [Y,m] = step_RMIS(fs,ff,Jf,t0,Y0,Bo,Bi,hs,hf)
 %
-% This routine performs a single step of the multirate
-% infinitesimal step (MIS) method for the vector-valued ODE problem
+% This routine performs a single step of the relaxed multirate
+% infinitesimal step (RMIS) method for the vector-valued ODE problem
 %     y' = fs(t,Y) + ff(t,Y), t >= t0, y in R^n,
 %     Y0 = [y1(t0), y2(t0), ..., yn(t0)]'.
-% We perform the solve using the 'standard' approach described by
-% Knoth & Wolke (1998), i.e., we do NOT consider the problem in
-% GARK form.
+% We perform the solve using a variation of the approach used for
+% MIS methods by Knoth & Wolke (1998), i.e., we do NOT consider the
+% problem in full GARK form.
 %
 % Inputs:
 %     fs     = function handle for (slow) ODE RHS
@@ -92,10 +92,17 @@ Y = reshape(Y0,n,1);
 % initialize temporary variables
 Fs = zeros(n,so);
 fscale = zeros(so,1);
+Ys = Y;
 
 % first outer stage
 Fs(:,1) = fs(t0,Y);
 tcur = t0;
+
+% add contributions from first outer stage to overall solution.
+% Note: since inner method has explicit first stage, then its
+% contribution to overall solution may be obtained by evaluating
+% fast RHS at the same time as the slow
+Y = Y + hs*bo(1)*(Fs(:,1) + ff(t0,Y));
 
 % iterate over remaining outer stages
 for i=2:so
@@ -115,51 +122,24 @@ for i=2:so
 
    % call inner RK method solver to perform substepping
    if (innerRK == 2)         % IRK inner method
-      [tvals, V, mi, ~] = solve_IRK(fi, Jf, tspan, Y, Bi, rtol, atol, hi, hi);
+      [tvals, V, mi, ~] = solve_IRK(fi, Jf, tspan, Ys, Bi, rtol, atol, hi, hi);
    elseif (innerRK == 1)     % DIRK inner method
-      [tvals, V, mi, ~] = solve_DIRK(fi, Jf, tspan, Y, Bi, rtol, atol, hi, hi);
+      [tvals, V, mi, ~] = solve_DIRK(fi, Jf, tspan, Ys, Bi, rtol, atol, hi, hi);
    else                      % ERK inner method
-      [tvals, V, mi] = solve_ERK(fi, estab, tspan, Y, Bi, rtol, atol, hi, hi);
+      [tvals, V, mi] = solve_ERK(fi, estab, tspan, Ys, Bi, rtol, atol, hi, hi);
    end
    m = m + mi;
 
    % update slow 'solution' as result from fast solve
-   Y = V(:,end);
+   Ys = V(:,end);
    tcur = t0 + c(i)*hs;
-   Fs(:,i) = fs(tcur,Y);
+   Fs(:,i) = fs(tcur,Ys);
 
-end
-
-
-% all stages completed, if any of the time interval remains, finish
-% that off here
-if (c(so) < 1)
-
-   % determine 'inner' ODE for this stage
-   %   RHS function
-   for j=1:so
-      fscale(j) = (bo(j)-Ao(so,j))/(1-co(so));
-   end
-   fi = @(t,y) ff(t,y) + Fs*fscale;
-   %   time interval
-   tspan = [tcur, hs];
-   %   num internal time steps
-   ni = ceil((1-co(so))*hs/hf);
-   %   step size
-   hi = (1-co(so))*hs/ni;
-
-   % call inner RK method solver to perform substepping
-   if (innerRK == 2)         % IRK inner method
-      [tvals, V, mi, ~] = solve_IRK(fi, Jf, tspan, Y, Bi, rtol, atol, hi, hi);
-   elseif (innerRK == 1)     % DIRK inner method
-      [tvals, V, mi, ~] = solve_DIRK(fi, Jf, tspan, Y, Bi, rtol, atol, hi, hi);
-   else                      % ERK inner method
-      [tvals, V, mi] = solve_ERK(fi, estab, tspan, Y, Bi, rtol, atol, hi, hi);
-   end
-   m = m + mi;
-
-   % update slow 'solution' as result from fast solve
-   Y = V(:,end);
+   % update overall solution; note that since inner method has
+   % explicit first stage, then its contribution to overall
+   % solution may be obtained by evaluating fast RHS at the same
+   % time as the slow
+   Y = Y + hs*bo(i)*(Fs(:,i) + ff(tcur,Ys));
 
 end
 
