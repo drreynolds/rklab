@@ -168,7 +168,7 @@ for tstep = 2:length(tvals)
          end
 
          % limit time step by explicit stability condition
-         hstab = h_stable * feval(StabFn, t, Ynew);
+         hstab = h_stable * StabFn(t, Ynew);
 
          % keep statistics on how many steps are accuracy vs stability limited
          if (h < hstab)
@@ -242,7 +242,7 @@ function [y,yerr] = ERKstep_embedded(fcn, y0, t0, h, B)
       end
 
       % construct new stage RHS
-      k(:,stage) = feval(fcn,t0+h*c(stage),z);
+      k(:,stage) = fcn(t0+h*c(stage),z);
 
    end
 
@@ -290,7 +290,7 @@ function [y] = ERKstep_basic(fcn, y0, t0, h, B)
       end
 
       % construct new stage RHS
-      k(:,stage) = feval(fcn,t0+h*c(stage),z);
+      k(:,stage) = fcn(t0+h*c(stage),z);
 
    end
 
@@ -338,7 +338,7 @@ function [y,yerr] = ERKstep_Richardson(fcn, y0, t0, h, B)
       end
 
       % construct new stage RHS
-      k(:,stage) = feval(fcn,t0+h*c(stage),z);
+      k(:,stage) = fcn(t0+h*c(stage),z);
 
    end
 
@@ -358,7 +358,7 @@ function [y,yerr] = ERKstep_Richardson(fcn, y0, t0, h, B)
       end
 
       % construct new stage RHS
-      k(:,stage) = feval(fcn,t0+h/2*c(stage),z);
+      k(:,stage) = fcn(t0+h/2*c(stage),z);
 
    end
    y2 = y0 + h/2*k*b;
@@ -372,7 +372,7 @@ function [y,yerr] = ERKstep_Richardson(fcn, y0, t0, h, B)
       end
 
       % construct new stage RHS
-      k(:,stage) = feval(fcn,t0+h/2*(1+c(stage)),z);
+      k(:,stage) = fcn(t0+h/2*(1+c(stage)),z);
 
    end
    y2 = y2 + h/2*k*b;

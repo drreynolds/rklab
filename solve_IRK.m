@@ -101,14 +101,14 @@ t = tvals(1);
 Ynew = Y0;
 
 % create Fdata structure for Newton solver and step solutions
-Fdata.fname = fcn;    % ODE RHS function name
-Fdata.Jname = Jfcn;   % ODE RHS Jacobian function name
-Fdata.B     = B;      % Butcher table
-Fdata.s     = s;      % number of stages
+Fdata.frhs = fcn;    % ODE RHS function name
+Fdata.Jrhs = Jfcn;   % ODE RHS Jacobian function name
+Fdata.B    = B;      % Butcher table
+Fdata.s    = s;      % number of stages
 
 % set function names for Newton solver residual/Jacobian
-Fun = 'F_IRK';
-Jac = 'A_IRK';
+Fun = @F_IRK;
+Jac = @A_IRK;
 
 % set initial time step size
 h = hinit;
@@ -283,9 +283,7 @@ for tstep = 2:length(tvals)
 
          % if already at minimum step, just return with failure
          if (h <= hmin)
-            fprintf('Cannot achieve desired accuracy.\n');
-            fprintf('Consider reducing hmin or increasing rtol.\n');
-            return
+            error('Cannot achieve desired accuracy.\n Consider reducing hmin or increasing rtol.\n');
          end
 
          % otherwise, reset guess, reduce time step, retry solve
@@ -343,7 +341,7 @@ z = reshape(z,nvar,s);
 f = zeros(nvar,s);
 for is=1:s
    t = Fdata.t + Fdata.h*c(is);
-   f(:,is) = feval(Fdata.fname, t, z(:,is));
+   f(:,is) = Fdata.frhs(t, z(:,is));
 end
 
 % form the solution

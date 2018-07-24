@@ -12,17 +12,18 @@
 clear
 
 % set problem parameters
-fn = 'f_p1';
-Jn = 'J_p1';
-Es = 'EStab_p1';
+ep = 0.2;
+fn = @(t,y) [y(2); (y(2) - y(2)*y(1)^2)/ep - y(1)];
+Jn = @(t,y) [0, 1; -1, (1-y(1)^2)/ep];
+global Pdata;
+Pdata.ep = ep;
+Es = @EStab_p1;
 Tf = 12;
 tout = linspace(0,Tf,100);
 hmin = 1e-6;
 hmax = 1.0;
 rtol = 1e-3;
 atol = 1e-14*ones(2,1);
-global Pdata;
-Pdata.ep = 0.2;
 u0 = 2;
 v0 = 0;
 Y0 = [u0; v0];

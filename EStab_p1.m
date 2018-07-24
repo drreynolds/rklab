@@ -8,12 +8,13 @@ function dt = EStab_p1(t, y)
 % All Rights Reserved
 
 % compute the Jacobian ODE RHS
-J = J_p1(t,y);
+global Pdata;
+J = [0, 1; -1, (1-y(1)^2)/Pdata.ep];
 
 % determine the largest eigenvalue magnitude
 lam = max(abs(eig(J)));
 
-% assume explicit stability region includes Euler stability region 
+% assume explicit stability region includes Euler stability region
 % (this assumes that the eigenvalues are in fact negative).
 dt = 1/lam;
 

@@ -4,11 +4,11 @@ function [y,lits,ierr] = newton(Fcn, Afn, y0, Fdata, ftol, stol, maxit)
 % Newton solver for the root-finding problem defined by the function Fcn,
 %     F(y,Fdata) = 0
 %
-% Inputs:  Fcn = function name for nonlinear residual, F(y,Fdata).  Note, all 
+% Inputs:  Fcn = function name for nonlinear residual, F(y,Fdata).  Note, all
 %                data required to evaluate F (other than y) should be stored
 %                in the data structure Fdata.
-%          Afn = function name for Jacobian of nonlinear residual, 
-%                A = partial_y F(y,Fdata).  
+%          Afn = function name for Jacobian of nonlinear residual,
+%                A = partial_y F(y,Fdata).
 %                Afn should use the same data structure for additional data
 %                as F.
 %          y0 = initial guess
@@ -27,13 +27,13 @@ function [y,lits,ierr] = newton(Fcn, Afn, y0, Fdata, ftol, stol, maxit)
 % All Rights Reserved
 
 % check solver inputs
-if (maxit < 1) 
+if (maxit < 1)
    error('newton error: requires at least 1 iteration (maxit)');
 end
-if (stol <= 0) 
+if (stol <= 0)
    error('newton error: tolerance must be positive (stol)');
 end
-if (ftol <= 0) 
+if (ftol <= 0)
    error('newton error: tolerance must be positive (ftol)');
 end
 
@@ -46,22 +46,22 @@ lits = 0;
 for i=1:maxit
 
    % compute residual at current guess
-   F = feval(Fcn,y,Fdata);
+   F = Fcn(y,Fdata);
 
    % check residual and increment for stopping
    if ((norm(s,inf) < stol) | (norm(F,inf) < ftol))
       ierr = 0;
       return
    end
-   
+
    % compute Jacobian
-   A = feval(Afn,y,Fdata);
-   
+   A = Afn(y,Fdata);
+
    % perform Newton update
    s = A\F;
    y = y - s;
    lits = lits + 1;
-   
+
 end
 
 % if we've made it to this point, the Newton iteration did not converge

@@ -13,20 +13,25 @@
 clear
 
 % set problem parameters
-fn = 'f_p2';
-Jn = 'J_p2';
-Es = 'EStab_p2';
+a = 1;
+b = 3.5;
+%ep = 5e-6;
+ep = 1e-3;
+fn = @(t,y) [a - (y(3)+1)*y(1) + y(1)*y(1)*y(2);
+             y(3)*y(1) - y(1)*y(1)*y(2);
+             (b-y(3))/ep - y(3)*y(1)];
+Jn = @(t,y) [-(y(3)+1) + 2*y(1)*y(2),   y(1)*y(1),     -y(1);
+             y(3) - 2*y(1)*y(2),    -y(1)*y(1),      y(1);
+             -y(3),               0,       -1/ep - y(1)];
+global Pdata;
+Pdata.ep = ep;
+Es = @EStab_p2;
 Tf = 10;
 tout = linspace(0,Tf,100);
 hmin = 1e-7;
 hmax = 1.0;
 rtol = 1e-3;
 atol = 1e-14*ones(3,1);
-global Pdata;
-Pdata.a = 1;
-Pdata.b = 3.5;
-%Pdata.ep = 5e-6;
-Pdata.ep = 1e-3;
 u0 = 1.2;
 v0 = 3.1;
 w0 = 3;

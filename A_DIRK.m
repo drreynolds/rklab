@@ -7,7 +7,7 @@ function Amat = A_DIRK(z, Fdata)
 %
 % This function computes the Jacobian of each intermediate stage residual
 % for a multi-stage DIRK method, through calling the user-supplied (in
-% Fdata) ODE Jacobian function. 
+% Fdata) ODE Jacobian function.
 %
 % Daniel R. Reynolds
 % Department of Mathematics
@@ -26,6 +26,6 @@ st = Fdata.stage;
 t  = Fdata.t + Fdata.h*c(st);
 
 % form the DIRK Jacobian
-Amat = eye(length(z)) - Fdata.h*A(st,st)*feval(Fdata.Jname, t, z);
+Amat = eye(length(z)) - Fdata.h*A(st,st)*Fdata.Jrhs(t, z);
 
 % end of function

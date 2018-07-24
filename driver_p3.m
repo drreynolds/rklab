@@ -15,9 +15,9 @@
 clear
 
 % set problem parameters
-fn = 'f_p3';
-Jn = 'J_p3';
-Es = 'EStab_p3';
+fn = @f_p3;
+Jn = @J_p3;
+Es = @EStab_p3;
 m = 100;
 Tf = 10;
 tout = linspace(0,Tf,100);

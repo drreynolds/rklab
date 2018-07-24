@@ -181,7 +181,6 @@ for tstep = 2:length(tvals)
          % if already at minimum step, just return with failure
          if (h <= hmin)
             error('Cannot achieve desired accuracy.\n  Consider reducing hmin or increasing rtol.\n');
-            return
          end
 
          % otherwise, reset guess, reduce time step, retry solve
@@ -237,17 +236,17 @@ function [y,yerr,cfail,lits] = DIRKstep_embedded(fcn, Jfcn, y0, t0, h, B)
    newt_stol  = 1e-10;        % Newton solver solution tolerance
 
    % set function names for Newton solver residual/Jacobian
-   Fun = 'F_DIRK';
-   Jac = 'A_DIRK';
+   Fun = @F_DIRK;
+   Jac = @A_DIRK;
 
    % set Fdata values for this step
-   Fdata.fname = fcn;    % ODE RHS function name
-   Fdata.Jname = Jfcn;   % ODE RHS Jacobian function name
-   Fdata.B     = B;      % Butcher table
-   Fdata.s     = s;      % number of stages
-   Fdata.h     = h;      % current step size
-   Fdata.yold  = y0;     % solution from previous step
-   Fdata.t     = t0;     % time of last successful step
+   Fdata.frhs = fcn;    % ODE RHS function name
+   Fdata.Jrhs = Jfcn;   % ODE RHS Jacobian function name
+   Fdata.B    = B;      % Butcher table
+   Fdata.s    = s;      % number of stages
+   Fdata.h    = h;      % current step size
+   Fdata.yold = y0;     % solution from previous step
+   Fdata.t    = t0;     % time of last successful step
 
    % loop over stages
    for stage = 1:s
@@ -284,7 +283,7 @@ function [y,yerr,cfail,lits] = DIRKstep_embedded(fcn, Jfcn, y0, t0, h, B)
       end
 
       % construct new stage RHS
-      k(:,stage) = feval(fcn,t0+h*c(stage),z);
+      k(:,stage) = fcn(t0+h*c(stage),z);
 
    end
 
@@ -331,17 +330,17 @@ function [y,cfail,lits] = DIRKstep_basic(fcn, Jfcn, y0, t0, h, B)
    newt_stol  = 1e-10;        % Newton solver solution tolerance
 
    % set function names for Newton solver residual/Jacobian
-   Fun = 'F_DIRK';
-   Jac = 'A_DIRK';
+   Fun = @F_DIRK;
+   Jac = @A_DIRK;
 
    % set Fdata values for this step
-   Fdata.fname = fcn;    % ODE RHS function name
-   Fdata.Jname = Jfcn;   % ODE RHS Jacobian function name
-   Fdata.B     = B;      % Butcher table
-   Fdata.s     = s;      % number of stages
-   Fdata.h     = h;      % current step size
-   Fdata.yold  = y0;     % solution from previous step
-   Fdata.t     = t0;     % time of last successful step
+   Fdata.frhs = fcn;    % ODE RHS function name
+   Fdata.Jrhs = Jfcn;   % ODE RHS Jacobian function name
+   Fdata.B    = B;      % Butcher table
+   Fdata.s    = s;      % number of stages
+   Fdata.h    = h;      % current step size
+   Fdata.yold = y0;     % solution from previous step
+   Fdata.t    = t0;     % time of last successful step
 
    % loop over stages
    for stage = 1:s
@@ -378,7 +377,7 @@ function [y,cfail,lits] = DIRKstep_basic(fcn, Jfcn, y0, t0, h, B)
       end
 
       % construct new stage RHS
-      k(:,stage) = feval(fcn,t0+h*c(stage),z);
+      k(:,stage) = fcn(t0+h*c(stage),z);
 
    end
 
@@ -425,17 +424,17 @@ function [y,yerr,cfail,lits] = DIRKstep_Richardson(fcn, Jfcn, y0, t0, h, B)
    newt_stol  = 1e-10;        % Newton solver solution tolerance
 
    % set function names for Newton solver residual/Jacobian
-   Fun = 'F_DIRK';
-   Jac = 'A_DIRK';
+   Fun = @F_DIRK;
+   Jac = @A_DIRK;
 
    % set Fdata values for this step
-   Fdata.fname = fcn;    % ODE RHS function name
-   Fdata.Jname = Jfcn;   % ODE RHS Jacobian function name
-   Fdata.B     = B;      % Butcher table
-   Fdata.s     = s;      % number of stages
-   Fdata.h     = h;      % current step size
-   Fdata.yold  = y0;     % solution from previous step
-   Fdata.t     = t0;     % time of last successful step
+   Fdata.frhs = fcn;    % ODE RHS function name
+   Fdata.Jrhs = Jfcn;   % ODE RHS Jacobian function name
+   Fdata.B    = B;      % Butcher table
+   Fdata.s    = s;      % number of stages
+   Fdata.h    = h;      % current step size
+   Fdata.yold = y0;     % solution from previous step
+   Fdata.t    = t0;     % time of last successful step
 
    % First compute solution with a single step
    for stage = 1:s
@@ -472,7 +471,7 @@ function [y,yerr,cfail,lits] = DIRKstep_Richardson(fcn, Jfcn, y0, t0, h, B)
       end
 
       % construct new stage RHS
-      k(:,stage) = feval(fcn,t0+h*c(stage),z);
+      k(:,stage) = fcn(t0+h*c(stage),z);
 
    end
 
@@ -498,7 +497,7 @@ function [y,yerr,cfail,lits] = DIRKstep_Richardson(fcn, Jfcn, y0, t0, h, B)
          cfail = 1;
          return;
       end
-      k(:,stage) = feval(fcn,t0+h/2*c(stage),z);
+      k(:,stage) = fcn(t0+h/2*c(stage),z);
    end
    y2 = y0 + h/2*k*b;
    Fdata.yold = y2;
@@ -517,7 +516,7 @@ function [y,yerr,cfail,lits] = DIRKstep_Richardson(fcn, Jfcn, y0, t0, h, B)
          cfail = 1;
          return;
       end
-      k(:,stage) = feval(fcn,t0+h/2*(1+c(stage)),z);
+      k(:,stage) = fcn(t0+h/2*(1+c(stage)),z);
    end
    y2 = y2 + h/2*k*b;
 

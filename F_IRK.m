@@ -37,7 +37,7 @@ z = reshape(z,nvar,s);
 f = zeros(nvar,s);
 for is=1:s
    t = Fdata.t + Fdata.h*c(is);
-   f(:,is) = feval(Fdata.fname, t, z(:,is));
+   f(:,is) = Fdata.frhs(t, z(:,is));
 end
 
 % form the IRK residuals

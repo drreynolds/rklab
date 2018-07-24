@@ -7,7 +7,7 @@ function Amat = A_IRK(z, Fdata)
 %
 % This function computes the Jacobian of each intermediate stage residual
 % for a multi-stage IRK method, through calling the user-supplied (in Fdata)
-% ODE Jacobian function. 
+% ODE Jacobian function.
 %
 % Daniel R. Reynolds
 % Department of Mathematics
@@ -37,7 +37,7 @@ z = reshape(z,nvar,s);
 J = zeros(nvar,nvar,s);
 for is=1:s
    t = Fdata.t + Fdata.h*c(is);
-   J(:,:,is) = feval(Fdata.Jname, t, z(:,is));
+   J(:,:,is) = Fdata.Jrhs(t, z(:,is));
 end
 
 % form the IRK Jacobian
