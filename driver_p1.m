@@ -13,8 +13,8 @@ clear
 
 % set problem parameters
 ep = 0.2;
-fn = @(t,y) [y(2); (y(2) - y(2)*y(1)^2)/ep - y(1)];
-Jn = @(t,y) [0, 1; -1, (1-y(1)^2)/ep];
+fn = @(t,y) [y(2); y(2)*(1-y(1)^2)/ep - y(1)];
+Jn = @(t,y) [0, 1; -1-2*y(1)*y(2)/ep, (1-y(1)^2)/ep];
 global Pdata;
 Pdata.ep = ep;
 Es = @EStab_p1;
