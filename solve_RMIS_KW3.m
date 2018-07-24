@@ -36,11 +36,8 @@ function [tvals,Y,ns,nf] = solve_RMIS_KW3(fs,ff,tvals,Y0,hs,hf)
 % July 2018
 % All Rights Reserved
 
-% set KW3 Butcher table   Bo = [co Ao; qo bo ]
-B = [  0    0     0     0;
-      1/3  1/3    0     0;
-      3/4 -3/16 15/16   0;
-       3   1/6   3/19  8/15];
+% set KW3 Butcher table
+B = butcher('Knoth-Wolke-ERK');
 
 % initialize output arrays
 N = length(tvals)-1;

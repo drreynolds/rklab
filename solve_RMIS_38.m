@@ -36,12 +36,8 @@ function [tvals,Y,ns,nf] = solve_RMIS_38(fs,ff,tvals,Y0,hs,hf)
 % July 2018
 % All Rights Reserved
 
-% set 3/8-Rule Butcher table   Bo = [co Ao; qo bo ]
-B = [  0    0    0    0    0;
-      1/3  1/3   0    0    0;
-      2/3 -1/3   1    0    0;
-       1    1   -1    1    0;
-       4   1/8  3/8  3/8  1/8];
+% set 3/8-Rule Butcher table
+B = butcher('3/8-Rule-ERK');
 
 % initialize output arrays
 N = length(tvals)-1;

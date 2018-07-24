@@ -1,8 +1,9 @@
-% multirate driver for Van der Pol ODE test problem:
-%    [u'] = [  v ]  + [     0     ] = fslow(u,v) + ffast(u,v)
-%    [v']   [ -u ]    [v(1-u^2)/ep]
-% where u(0) = 2,  v(0) = 0, and ep = 0.2, integrated over
-% the time interval [0,12].
+% multirate driver for stiff brusselator test problem:
+%      [u]'   [ a - (w+1)*u + u^2*v ]   [     0    ]
+%      [v]' = [     w*u - u^2*v     ] + [     0    ] = fslow(u,v,w) + ffast(u,v,w)
+%      [w]'   [         -u*w        ]   [ (b-w)/ep ]
+% where u(0) = 1.2, v(0) = 3.1 and w(0) = 3, with prameters a=1,
+% b=3.5 and ep=5e-6.  We evaluate over the time interval [0,10].
 %
 % Daniel R. Reynolds
 % Department of Mathematics
@@ -12,20 +13,23 @@
 clear
 
 % set problem parameters
-ep = 0.2;
-fs  = @(t,y) [y(2); -y(1)];
-ff  = @(t,y) [0; y(2)*(1 - y(1)^2)/ep];
+a = 1;
+b = 3.5;
+ep = 1e-3;
+fs  = @(t,y) [a - (y(3)+1)*y(1) + y(1)*y(1)*y(2); y(3)*y(1) - y(1)*y(1)*y(2); -y(3)*y(1)];
+ff  = @(t,y) [0; 0; (b-y(3))/ep];
 fn  = @(t,y) fs(t,y) + ff(t,y);
-Jff = @(t,y) [0, 0; -2*y(1)*y(2)/ep, (1-y(1)^2)/ep];
-Tf = 12;
+Jff = @(t,y) [0, 0, 0; 0, 0, 0; 0, 0, -1/ep ];
+Tf = 10;
 tout = linspace(0,Tf,100);
-hmin = 1e-6;
+hmin = 1e-7;
 hmax = 1.0;
 rtol = 1e-3;
-atol = 1e-14*ones(2,1);
-u0 = 2;
-v0 = 0;
-Y0 = [u0; v0];
+atol = 1e-14*ones(3,1);
+u0 = 1.2;
+v0 = 3.1;
+w0 = 3;
+Y0 = [u0; v0; w0];
 ntests = 7;
 test_adaptive = false;
 
@@ -35,9 +39,10 @@ opts = odeset('RelTol',1e-12, 'AbsTol',atol,'InitialStep',hmin/10, 'MaxStep',hma
 figure()
 plot(tout,Ytrue)
 xlabel('t','FontSize',12), ylabel('y','FontSize',12)
-title('Van der Pol test','FontSize',14)
+title('Brusselator ODE test','FontSize',14)
 set(gca,'FontSize',12)
-print('-dpng','vanderPol')
+print('-dpng','brusselator')
+
 
 % perform convergence tests with fixed-step multirate solvers
 solvers = {@solve_MIS_KW3, @solve_MIS_38, @solve_RMIS_KW3, @solve_RMIS_38};
@@ -48,7 +53,7 @@ for isol=1:length(solvers)
    fprintf('\nRunning convergence test with %s integrator (theoretical order %i)\n',...
         snames{isol},orders(isol))
    for i=1:ntests
-      hs = Tf/100/2^(i-1);
+      hs = Tf/100/2^(i+1);
       hf = hs/100;
       [t,Y,ns,nf] = solver(fs, ff, tout, Y0, hs, hf);
       err_max(i) = max(max(abs(Y'-Ytrue)));

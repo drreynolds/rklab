@@ -153,7 +153,7 @@ if (co(so) < 1)
    end
    fi = @(t,y) ff(t,y) + Fs*fscale;
    %   time interval
-   tspan = [tcur, hs];
+   tspan = [tcur, t0+hs];
    %   num internal time steps
    ni = ceil((1-co(so))*hs/hf);
    %   step size
