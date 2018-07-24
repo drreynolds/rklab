@@ -1,8 +1,8 @@
-function [tvals,Y,nsteps,lits] = solve_DIRK(fcn,Jfcn,tvals,Y0,B,rtol,atol,hmin,hmax)
-% usage: [tvals,Y,nsteps,lits] = solve_DIRK(fcn,Jfcn,tvals,Y0,B,rtol,atol,hmin,hmax)
+function [tvals,Y,nsteps,lits,h] = solve_DIRK(fcn,Jfcn,tvals,Y0,B,rtol,atol,hmin,hmax,hinit)
+% usage: [tvals,Y,nsteps,lits,h] = solve_DIRK(fcn,Jfcn,tvals,Y0,B,rtol,atol,hmin,hmax,hinit)
 %
 % Adaptive time step diagonally-implicit Runge-Kutta solver for the
-% vector-valued ODE problem 
+% vector-valued ODE problem
 %     y' = F(t,Y), t in tvals, y in R^m,
 %     Y(t0) = [y1(t0), y2(t0), ..., ym(t0)]'.
 %
@@ -28,40 +28,46 @@ function [tvals,Y,nsteps,lits] = solve_DIRK(fcn,Jfcn,tvals,Y0,B,rtol,atol,hmin,h
 %     atol   = desired absolute error of solution  (vector or scalar)
 %     hmin   = minimum internal time step size (hmin <= t(i)-t(i-1), for all i)
 %     hmax   = maximum internal time step size (hmax >= hmin)
+%     hinit  = initial internal time step size (hmin <= hinit <= hmax)
 %
-% Outputs: 
+% Outputs:
 %     tvals  = the same as the input array tvals
 %     y      = [y(t0), y(t1), y(t2), ..., y(tN)], where each
 %               y(t*) is a column vector of length m.
 %     nsteps = number of internal time steps taken by method
 %     lits   = number of linear solves required by method
+%     h      = last internal step size
 %
-% Note: to run in fixed-step mode, call with hmin=hmax as the desired 
-% time step size, and set the tolerances to large positive numbers.
+% Note: to run in fixed-step mode, call with hmin=hmax as the desired
+% time step size.
 %
 % Daniel R. Reynolds
 % Department of Mathematics
 % Southern Methodist University
-% August 2012
+% July 2018
 % All Rights Reserved
 
+% determine whether adaptivity is desired
+adaptive = 0;
+if (abs(hmax-hmin)/abs(hmax) > sqrt(eps))
+   adaptive = 1;
+end
 
-% extract DIRK method information from B
+% if adaptivity enabled, determine approach for error estimation,
+% and set the lower-order of accuracy accordingly
 [Brows, Bcols] = size(B);
-s = Bcols - 1;        % number of stages
-c = B(1:s,1);         % stage time fraction array
-b = (B(s+1,2:s+1))';  % solution weights (convert to column)
-A = B(1:s,2:s+1);     % RK coefficients
-
-% initialize as non-embedded, until proven otherwise
 embedded = 0;
 p = 0;
-if (Brows > Bcols)
-   if (max(abs(B(s+2,2:s+1))) > eps)
-      embedded = 1;
-      b2 = (B(s+2,2:s+1))';
-      p = B(s+2,1);
+if (hmax > hmin)      % check whether adaptivity is desired
+   if (Brows > Bcols)
+      if (max(abs(B(Bcols+1,2:Bcols))) > eps)   % check for embedding coeffs
+         embedded = 1;
+         p = B(Bcols+1,1);
+      end
    end
+end
+if (embedded == 0)
+   p = B(Bcols,1);
 end
 
 % initialize output arrays
@@ -75,10 +81,7 @@ c_fails = 0;   % total convergence failures
 a_fails = 0;   % total accuracy failures
 
 % set the solver parameters
-newt_maxit = 20;           % max number of Newton iterations
-newt_ftol  = 1e-10;        % Newton solver residual tolerance
-newt_stol  = 1e-10;        % Newton solver solution tolerance
-h_reduce   = 0.1;          % failed step reduction factor 
+h_reduce   = 0.1;          % failed step reduction factor
 h_safety   = 0.9;          % adaptivity safety factor
 h_growth   = 10;           % adaptivity growth bound
 ONEMSM     = 1-sqrt(eps);  % coefficients to account for
@@ -90,18 +93,8 @@ ERRTOL     = 1.1;          % upper bound on allowed step error
 t = tvals(1);
 Ynew = Y0;
 
-% create Fdata structure for Newton solver and step solutions
-Fdata.fname = fcn;    % ODE RHS function name
-Fdata.Jname = Jfcn;   % ODE RHS Jacobian function name
-Fdata.B     = B;      % Butcher table 
-Fdata.s     = s;      % number of stages
-
-% set function names for Newton solver residual/Jacobian
-Fun = 'F_DIRK';
-Jac = 'A_DIRK';
-
 % set initial time step size
-h = hmin;
+h = hinit;
 
 % initialize work counters
 nsteps = 0;
@@ -112,92 +105,60 @@ for tstep = 2:length(tvals)
 
    % loop over internal time steps to get to desired output time
    while (t < tvals(tstep)*ONEMSM)
-      
-      % bound internal time step 
+
+      % bound internal time step
       h = max([h, hmin]);            % enforce minimum time step size
       h = min([h, hmax]);            % maximum time step size
       h = min([h, tvals(tstep)-t]);  % stop at output time
 
-      % set Fdata values for this step
-      Fdata.h    = h;    % current step size
-      Fdata.yold = Y0;   % solution from previous step
-      Fdata.t    = t;    % time of last successful step
-
-      % initialize data storage for multiple stages
-      z = zeros(m,s);
-
-      % reset stage failure flag
+      % reset step failure flag
       st_fail = 0;
-      
-      % loop over stages
-      for stage = 1:s
-         
-         % set Newton initial guess as previous stage solution
-         Yguess = Ynew;
-         
-         % set current stage index into Fdata structure
-         Fdata.stage = stage;
-         
-         % construct RHS comprised of old time data
-         %    zi = y_n + h*sum_{j=1}^s (a(i,j)*fj)
-         % <=>
-         %    zi - h*(a(i,i)*fi) = y_n + h*sum_{j=1}^{i-1} (a(i,j)*fj)
-         % =>
-         %    rhs = y_n + h*sum_{j=1}^{i-1} (a(i,j)*fj)
-         Fdata.rhs = Y0;
-         for j = 1:stage-1
-            Fdata.rhs = Fdata.rhs + h*A(stage,j)*feval(fcn, t+h*c(j), z(:,j));
-         end
-         
-         % call Newton solver to compute new stage solution
-         [Ynew,lin,ierr] = newton(Fun, Jac, Yguess, Fdata, ...
-                                  newt_ftol, newt_stol, newt_maxit);
 
-         % increment total linear solver statistics
-         lits = lits + lin;
-         
-         % if Newton method failed, set relevant flags/statistics
-         % and break out of stage loop
-         if (ierr ~= 0) 
-            st_fail = 1;
-            c_fails = c_fails + 1;
-            break;
+      % call stepper routine to take the step and compute error
+      % estimate (if applicable)
+      if (adaptive)
+         if (embedded)
+            [Ynew,Yerr,cfail,lin] = DIRKstep_embedded(fcn, Jfcn, Y0, t, h, B);
+         else
+            [Ynew,Yerr,cfail,lin] = DIRKstep_Richardson(fcn, Jfcn, Y0, t, h, B);
          end
-         
-         % store stage solution
-         z(:,stage) = Ynew;
-         
+      else
+         [Ynew,cfail,lin] = DIRKstep_basic(fcn, Jfcn, Y0, t, h, B);
       end
-      
-      % increment number of internal time steps taken
+
+      % increment linear iteration and number of internal time steps counters
       nsteps = nsteps + 1;
-      
-      % compute new solution (and embedding if available)
-      [Ynew,Y2] = Y_DIRK(z,Fdata);
+      lits = lits + lin;
+
+      % check for nonlinear convergence/divergence
+      if (cfail ~= 0)
+         st_fail = 1;
+         c_fails = c_fails + 1;
+      end
 
       % if stages succeeded and time step adaptivity enabled, check step accuracy
-      if ((st_fail == 0) & embedded)
+      if ((st_fail == 0) && adaptive)
 
          % estimate error in current step
-         err_step = max(norm((Ynew - Y2)./(rtol*Ynew + atol),inf), eps);
-         
+         err_step = max(norm(Yerr./(rtol*Ynew + atol),inf), eps);
+
          % if error too high, flag step as a failure (will be be recomputed)
-         if (err_step > ERRTOL*ONEPSM) 
+         if (err_step > ERRTOL*ONEPSM)
             a_fails = a_fails + 1;
             st_fail = 1;
          end
-         
+
       end
 
       % if step was successful (solves succeeded, and error acceptable)
-      if (st_fail == 0) 
-         
+      if (st_fail == 0)
+
          % update solution and time for last successful step
          Y0 = Ynew;
          t  = t + h;
-         
-         % for embedded methods, use error estimate to adapt the time step
-         if (embedded) 
+
+         % for adaptive methods, use error estimate to adapt the time step
+         if (adaptive)
 
             h_old = h;
             if (err_step == 0.0)     % no error, set max possible
@@ -213,28 +174,27 @@ for tstep = 2:length(tvals)
          else
             h = hmin;
          end
-         
+
       % if step solves or error test failed
       else
 
          % if already at minimum step, just return with failure
-         if (h <= hmin) 
-            fprintf('Cannot achieve desired accuracy.\n');
-            fprintf('Consider reducing hmin or increasing rtol.\n');
+         if (h <= hmin)
+            error('Cannot achieve desired accuracy.\n  Consider reducing hmin or increasing rtol.\n');
             return
          end
 
          % otherwise, reset guess, reduce time step, retry solve
          Ynew = Y0;
          h = h * h_reduce;
-         
+
       end  % end logic tests for step success/failure
-      
+
    end  % end while loop attempting to solve steps to next output time
 
    % store updated solution in output array
    Y(:,tstep) = Ynew;
-   
+
 end  % time step loop
 
 % end solve_DIRK function
@@ -242,54 +202,329 @@ end
 
 
 
-
-
-function [y,y2] = Y_DIRK(z, Fdata)
-% usage: [y,y2] = Y_DIRK(z, Fdata)
+function [y,yerr,cfail,lits] = DIRKstep_embedded(fcn, Jfcn, y0, t0, h, B)
+% usage: [y,yerr,cfail,lits] = DIRKstep_embedded(fcn, Jfcn, y0, t0, h, B)
 %
 % Inputs:
-%    z     = stage solutions [z1, ..., zs]
-%    Fdata = structure containing extra problem information
+%    fcn = ODE RHS function, f(t,y)
+%    y0  = solution at beginning of time step
+%    t0  = 'time' at beginning of time step
+%    h   = step size to take
+%    B   = Butcher table to use
 %
-% Outputs: 
-%    y     = step solution built from the z values
-%    y2    = embedded solution (if embedding included in Butcher 
-%               table; otherwise the same as y)
+% Outputs:
+%    y     = new solution at t0+h
+%    yerr  = error vector
+%    cfail = convergence failure flag (0=success; 1=failure)
+%    lits  = total linear iterations for step
 
-% extract method information from Fdata
-B = Fdata.B;
-[Brows, Bcols] = size(B);
-s = Bcols - 1;
-c = B(1:s,1);
-b = (B(s+1,2:s+1))';
+   % extract ERK method information from B
+   [Brows, Bcols] = size(B);
+   s = Bcols - 1;        % number of stages
+   c = B(1:s,1);         % stage time fraction array
+   b = (B(s+1,2:s+1))';  % solution weights (convert to column)
+   A = B(1:s,2:s+1);     % RK coefficients
+   d = (B(s+2,2:s+1))';  % embedding coefficients
 
-% check to see if we have coefficients for embedding
-if (Brows > Bcols)
-   b2 = (B(s+2,2:s+1))';
-else
-   b2 = b;
-end
+   % initialize storage for RHS vectors, outputs
+   k = zeros(length(y0),s);
+   lits = 0;
+   cfail = 0;
 
-% get some problem information
-[zrows,zcols] = size(z);
-nvar = zrows;
-if (zcols ~= s)
-   error('Y_DIRK error: z has incorrect number of stages');
-end
+   % set the solver parameters
+   newt_maxit = 20;           % max number of Newton iterations
+   newt_ftol  = 1e-10;        % Newton solver residual tolerance
+   newt_stol  = 1e-10;        % Newton solver solution tolerance
 
-% call RHS at our stages
-f = zeros(nvar,s);
-for is=1:s
-   t = Fdata.t + Fdata.h*c(is);
-   f(:,is) = feval(Fdata.fname, t, z(:,is));
-end
+   % set function names for Newton solver residual/Jacobian
+   Fun = 'F_DIRK';
+   Jac = 'A_DIRK';
 
-% form the solutions
-%    ynew = yold + h*sum(b(j)*fj)
-y  = Fdata.yold + Fdata.h*f*b;
-y2 = Fdata.yold + Fdata.h*f*b2;
+   % set Fdata values for this step
+   Fdata.fname = fcn;    % ODE RHS function name
+   Fdata.Jname = Jfcn;   % ODE RHS Jacobian function name
+   Fdata.B     = B;      % Butcher table
+   Fdata.s     = s;      % number of stages
+   Fdata.h     = h;      % current step size
+   Fdata.yold  = y0;     % solution from previous step
+   Fdata.t     = t0;     % time of last successful step
+
+   % loop over stages
+   for stage = 1:s
+
+      % set Newton initial guess as previous stage solution
+      z = y0;
+
+      % set current stage index into Fdata structure
+      Fdata.stage = stage;
+
+      % construct RHS comprised of old time data
+      %    zi = y_n + h*sum_{j=1}^s (a(i,j)*fj)
+      % <=>
+      %    zi - h*(a(i,i)*fi) = y_n + h*sum_{j=1}^{i-1} (a(i,j)*fj)
+      % =>
+      %    rhs = y_n + h*sum_{j=1}^{i-1} (a(i,j)*fj)
+      Fdata.rhs = y0;
+      for j = 1:stage-1
+         Fdata.rhs = Fdata.rhs + h*A(stage,j)*k(:,j);
+      end
+
+      % call Newton solver to compute new stage solution
+      [z,lin,ierr] = newton(Fun, Jac, z, Fdata, ...
+                            newt_ftol, newt_stol, newt_maxit);
+
+      % increment total linear solver statistics
+      lits = lits + lin;
+
+      % if Newton method failed, set relevant flags/statistics
+      % and break out of stage loop
+      if (ierr ~= 0)
+         cfail = 1;
+         return;
+      end
+
+      % construct new stage RHS
+      k(:,stage) = feval(fcn,t0+h*c(stage),z);
+
+   end
+
+   % compute new solution and error estimate
+   %    ynew = yold + h*sum(b(j)*fj)
+   y = y0 + h*k*b;
+   yerr = h*k*(b-d);
 
 % end of function
 end
 
 
+
+function [y,cfail,lits] = DIRKstep_basic(fcn, Jfcn, y0, t0, h, B)
+% usage: [y,cfail,lits] = DIRKstep_basic(fcn, Jfcn, y0, t0, h, B)
+%
+% Inputs:
+%    fcn = ODE RHS function, f(t,y)
+%    y0  = solution at beginning of time step
+%    t0  = 'time' at beginning of time step
+%    h   = step size to take
+%    B   = Butcher table to use
+%
+% Outputs:
+%    y     = new solution at t0+h
+%    cfail = convergence failure flag (0=success; 1=failure)
+%    lits  = total linear iterations for step
+
+   % extract ERK method information from B
+   [Brows, Bcols] = size(B);
+   s = Bcols - 1;        % number of stages
+   c = B(1:s,1);         % stage time fraction array
+   b = (B(s+1,2:s+1))';  % solution weights (convert to column)
+   A = B(1:s,2:s+1);     % RK coefficients
+
+   % initialize storage for RHS vectors, outputs
+   k = zeros(length(y0),s);
+   lits = 0;
+   cfail = 0;
+
+   % set the solver parameters
+   newt_maxit = 20;           % max number of Newton iterations
+   newt_ftol  = 1e-10;        % Newton solver residual tolerance
+   newt_stol  = 1e-10;        % Newton solver solution tolerance
+
+   % set function names for Newton solver residual/Jacobian
+   Fun = 'F_DIRK';
+   Jac = 'A_DIRK';
+
+   % set Fdata values for this step
+   Fdata.fname = fcn;    % ODE RHS function name
+   Fdata.Jname = Jfcn;   % ODE RHS Jacobian function name
+   Fdata.B     = B;      % Butcher table
+   Fdata.s     = s;      % number of stages
+   Fdata.h     = h;      % current step size
+   Fdata.yold  = y0;     % solution from previous step
+   Fdata.t     = t0;     % time of last successful step
+
+   % loop over stages
+   for stage = 1:s
+
+      % set Newton initial guess as previous stage solution
+      z = y0;
+
+      % set current stage index into Fdata structure
+      Fdata.stage = stage;
+
+      % construct RHS comprised of old time data
+      %    zi = y_n + h*sum_{j=1}^s (a(i,j)*fj)
+      % <=>
+      %    zi - h*(a(i,i)*fi) = y_n + h*sum_{j=1}^{i-1} (a(i,j)*fj)
+      % =>
+      %    rhs = y_n + h*sum_{j=1}^{i-1} (a(i,j)*fj)
+      Fdata.rhs = y0;
+      for j = 1:stage-1
+         Fdata.rhs = Fdata.rhs + h*A(stage,j)*k(:,j);
+      end
+
+      % call Newton solver to compute new stage solution
+      [z,lin,ierr] = newton(Fun, Jac, z, Fdata, ...
+                            newt_ftol, newt_stol, newt_maxit);
+
+      % increment total linear solver statistics
+      lits = lits + lin;
+
+      % if Newton method failed, set relevant flags/statistics
+      % and break out of stage loop
+      if (ierr ~= 0)
+         cfail = 1;
+         return;
+      end
+
+      % construct new stage RHS
+      k(:,stage) = feval(fcn,t0+h*c(stage),z);
+
+   end
+
+   % compute new solution and error estimate
+   %    ynew = yold + h*sum(b(j)*fj)
+   y = y0 + h*k*b;
+
+% end of function
+end
+
+
+
+function [y,yerr,cfail,lits] = DIRKstep_Richardson(fcn, Jfcn, y0, t0, h, B)
+% usage: [y,yerr,cfail,lits] = DIRKstep_Richardson(fcn, Jfcn, y0, t0, h, B)
+%
+% Inputs:
+%    fcn = ODE RHS function, f(t,y)
+%    y0  = solution at beginning of time step
+%    t0  = 'time' at beginning of time step
+%    h   = step size to take
+%    B   = Butcher table to use
+%
+% Outputs:
+%    y     = new solution at t0+h
+%    yerr  = error vector
+%    cfail = convergence failure flag (0=success; 1=failure)
+%    lits  = total linear iterations for step
+
+   % extract ERK method information from B
+   [Brows, Bcols] = size(B);
+   s = Bcols - 1;        % number of stages
+   c = B(1:s,1);         % stage time fraction array
+   b = (B(s+1,2:s+1))';  % solution weights (convert to column)
+   A = B(1:s,2:s+1);     % RK coefficients
+
+   % initialize storage for RHS vectors, outputs
+   k = zeros(length(y0),s);
+   lits = 0;
+   cfail = 0;
+
+   % set the solver parameters
+   newt_maxit = 20;           % max number of Newton iterations
+   newt_ftol  = 1e-10;        % Newton solver residual tolerance
+   newt_stol  = 1e-10;        % Newton solver solution tolerance
+
+   % set function names for Newton solver residual/Jacobian
+   Fun = 'F_DIRK';
+   Jac = 'A_DIRK';
+
+   % set Fdata values for this step
+   Fdata.fname = fcn;    % ODE RHS function name
+   Fdata.Jname = Jfcn;   % ODE RHS Jacobian function name
+   Fdata.B     = B;      % Butcher table
+   Fdata.s     = s;      % number of stages
+   Fdata.h     = h;      % current step size
+   Fdata.yold  = y0;     % solution from previous step
+   Fdata.t     = t0;     % time of last successful step
+
+   % First compute solution with a single step
+   for stage = 1:s
+
+      % set Newton initial guess as previous stage solution
+      z = y0;
+
+      % set current stage index into Fdata structure
+      Fdata.stage = stage;
+
+      % construct RHS comprised of old time data
+      %    zi = y_n + h*sum_{j=1}^s (a(i,j)*fj)
+      % <=>
+      %    zi - h*(a(i,i)*fi) = y_n + h*sum_{j=1}^{i-1} (a(i,j)*fj)
+      % =>
+      %    rhs = y_n + h*sum_{j=1}^{i-1} (a(i,j)*fj)
+      Fdata.rhs = y0;
+      for j = 1:stage-1
+         Fdata.rhs = Fdata.rhs + h*A(stage,j)*k(:,j);
+      end
+
+      % call Newton solver to compute new stage solution
+      [z,lin,ierr] = newton(Fun, Jac, z, Fdata, ...
+                            newt_ftol, newt_stol, newt_maxit);
+
+      % increment total linear solver statistics
+      lits = lits + lin;
+
+      % if Newton method failed, set relevant flags/statistics
+      % and break out of stage loop
+      if (ierr ~= 0)
+         cfail = 1;
+         return;
+      end
+
+      % construct new stage RHS
+      k(:,stage) = feval(fcn,t0+h*c(stage),z);
+
+   end
+
+   % compute full-step solution
+   %    ynew = yold + h*sum(b(j)*fj)
+   y1 = y0 + h*k*b;
+
+
+   % Second compute solution with two half steps
+   Fdata.h = h/2;
+   for stage = 1:s
+      z = y0;   % consider 'smarter' approach for constructing
+                % initial guess using results from full-step solution
+      Fdata.stage = stage;
+      Fdata.rhs = y0;
+      for j = 1:stage-1
+         Fdata.rhs = Fdata.rhs + h/2*A(stage,j)*k(:,j);
+      end
+      [z,lin,ierr] = newton(Fun, Jac, z, Fdata, ...
+                            newt_ftol, newt_stol, newt_maxit);
+      lits = lits + lin;
+      if (ierr ~= 0)
+         cfail = 1;
+         return;
+      end
+      k(:,stage) = feval(fcn,t0+h/2*c(stage),z);
+   end
+   y2 = y0 + h/2*k*b;
+   Fdata.yold = y2;
+   Fdata.t    = t0+h/2;
+   for stage = 1:s
+      z = y2;
+      Fdata.stage = stage;
+      Fdata.rhs = y2;
+      for j = 1:stage-1
+         Fdata.rhs = Fdata.rhs + h/2*A(stage,j)*k(:,j);
+      end
+      [z,lin,ierr] = newton(Fun, Jac, z, Fdata, ...
+                            newt_ftol, newt_stol, newt_maxit);
+      lits = lits + lin;
+      if (ierr ~= 0)
+         cfail = 1;
+         return;
+      end
+      k(:,stage) = feval(fcn,t0+h/2*(1+c(stage)),z);
+   end
+   y2 = y2 + h/2*k*b;
+
+
+   % Compute Richardson extrapolant and error estimate
+   y = 2*y2-y1;
+   yerr = y-y2;
+
+% end of function
+end

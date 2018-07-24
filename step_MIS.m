@@ -115,11 +115,11 @@ for i=2:so
 
    % call inner RK method solver to perform substepping
    if (innerRK == 2)         % IRK inner method
-      [tvals, V, mi, ~] = solve_IRK(fi, Jf, tspan, Y, Bi, rtol, atol, hi, hi);
+      [tvals, V, mi, ~, ~] = solve_IRK(fi, Jf, tspan, Y, Bi, rtol, atol, hi, hi, hi);
    elseif (innerRK == 1)     % DIRK inner method
-      [tvals, V, mi, ~] = solve_DIRK(fi, Jf, tspan, Y, Bi, rtol, atol, hi, hi);
+      [tvals, V, mi, ~, ~] = solve_DIRK(fi, Jf, tspan, Y, Bi, rtol, atol, hi, hi, hi);
    else                      % ERK inner method
-      [tvals, V, mi] = solve_ERK(fi, estab, tspan, Y, Bi, rtol, atol, hi, hi);
+      [tvals, V, mi, ~] = solve_ERK(fi, estab, tspan, Y, Bi, rtol, atol, hi, hi, hi);
    end
    m = m + mi;
 
@@ -150,11 +150,11 @@ if (c(so) < 1)
 
    % call inner RK method solver to perform substepping
    if (innerRK == 2)         % IRK inner method
-      [tvals, V, mi, ~] = solve_IRK(fi, Jf, tspan, Y, Bi, rtol, atol, hi, hi);
+      [tvals, V, mi, ~, ~] = solve_IRK(fi, Jf, tspan, Y, Bi, rtol, atol, hi, hi, hi);
    elseif (innerRK == 1)     % DIRK inner method
-      [tvals, V, mi, ~] = solve_DIRK(fi, Jf, tspan, Y, Bi, rtol, atol, hi, hi);
+      [tvals, V, mi, ~, ~] = solve_DIRK(fi, Jf, tspan, Y, Bi, rtol, atol, hi, hi, hi);
    else                      % ERK inner method
-      [tvals, V, mi] = solve_ERK(fi, estab, tspan, Y, Bi, rtol, atol, hi, hi);
+      [tvals, V, mi, ~] = solve_ERK(fi, estab, tspan, Y, Bi, rtol, atol, hi, hi, hi);
    end
    m = m + mi;
 

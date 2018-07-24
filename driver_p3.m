@@ -1,10 +1,10 @@
 % driver for brusselator PDE test problem:
 %      u' = d1*u_xx + a - (b+1)*u + u^2*v,
 %      v' = d2*v_xx + b*u - u^2*v,
-% with parameters a=0.6, b=2, d1=d2=0.25, over the spatial 
-% interval [0,1] and the time interval [0,80].  Initial 
-% conditions are u(x,0) = a + 0.1*sin(pi*x), 
-% v(x,0) = b/a + 0.1*sin(pi*x), and boundary conditions are 
+% with parameters a=0.6, b=2, d1=d2=0.25, over the spatial
+% interval [0,1] and the time interval [0,80].  Initial
+% conditions are u(x,0) = a + 0.1*sin(pi*x),
+% v(x,0) = b/a + 0.1*sin(pi*x), and boundary conditions are
 % homogeneous Dirichlet.  We use a mesh with 100 spatial zones.
 %
 % Daniel R. Reynolds
@@ -51,11 +51,23 @@ set(gca,'FontSize',12)
 print('-dpng','brusselator1D')
 
 
-% run with a diagonally-implicit RK method
+% run with an embedded diagonally-implicit RK method
 mname = 'Kvaerno(7,4,5)-ESDIRK';
 B = butcher(mname);  s = numel(B(1,:))-1;
 fprintf('\nRunning with DIRK integrator: %s (order = %i)\n',mname,B(s+1,1))
-[t,Y,ns,nl] = solve_DIRK(fn, Jn, tout, Y0, B, rtol, atol, hmin, hmax);
+[t,Y,ns,nl,~] = solve_DIRK(fn, Jn, tout, Y0, B, rtol, atol, hmin, hmax, hmin);
+err_max = max(max(abs(Y'-Ytrue)));
+err_rms = sqrt(sum(sum((Y'-Ytrue).^2))/numel(Y));
+fprintf('Accuracy/Work Results:\n')
+fprintf('   maxerr = %.5e,  rmserr = %.5e\n',err_max, err_rms);
+fprintf('   steps = %i (stages = %i), linear solves = %i\n',ns,ns*s,nl);
+
+
+% run with a non-embedded diagonally-implicit RK method
+mname = 'Cooper6-ESDIRK';
+B = butcher(mname);  s = numel(B(1,:))-1;
+fprintf('\nRunning with DIRK integrator: %s (order = %i)\n',mname,B(s+1,1))
+[t,Y,ns,nl,~] = solve_DIRK(fn, Jn, tout, Y0, B, rtol, atol, hmin, hmax, hmin);
 err_max = max(max(abs(Y'-Ytrue)));
 err_rms = sqrt(sum(sum((Y'-Ytrue).^2))/numel(Y));
 fprintf('Accuracy/Work Results:\n')
@@ -67,7 +79,7 @@ fprintf('   steps = %i (stages = %i), linear solves = %i\n',ns,ns*s,nl);
 mname = 'RadauIIA-3-5-IRK';
 B = butcher(mname);  s = numel(B(1,:))-1;
 fprintf('\nRunning with IRK integrator: %s (order = %i)\n',mname,B(s+1,1))
-[t,Y,ns,nl] = solve_IRK(fn, Jn, tout, Y0, B, rtol, atol, hmin, hmax);
+[t,Y,ns,nl,~] = solve_IRK(fn, Jn, tout, Y0, B, rtol, atol, hmin, hmax, hmin);
 err_max = max(max(abs(Y'-Ytrue)));
 err_rms = sqrt(sum(sum((Y'-Ytrue).^2))/numel(Y));
 fprintf('Accuracy/Work Results:\n')
@@ -75,11 +87,23 @@ fprintf('   maxerr = %.5e,  rmserr = %.5e\n',err_max, err_rms);
 fprintf('   steps = %i (stages = %i), linear solves = %i\n',ns,ns*s,nl);
 
 
-% run with an explicit RK method
+% run with an embedded explicit RK method
 mname = 'Merson-5-4-ERK';
 B = butcher(mname);  s = numel(B(1,:))-1;
 fprintf('\nRunning with ERK integrator: %s (order = %i)\n',mname,B(s+1,1))
-[t,Y,ns] = solve_ERK(fn, Es, tout, Y0, B, rtol, atol, hmin, hmax);
+[t,Y,ns,~] = solve_ERK(fn, Es, tout, Y0, B, rtol, atol, hmin, hmax, hmin);
+err_max = max(max(abs(Y'-Ytrue)));
+err_rms = sqrt(sum(sum((Y'-Ytrue).^2))/numel(Y));
+fprintf('Accuracy/Work Results:\n')
+fprintf('   maxerr = %.5e,  rmserr = %.5e\n',err_max, err_rms);
+fprintf('   steps = %i (stages = %i)\n',ns,ns*s);
+
+
+% run with a non-embedded explicit RK method
+mname = 'ERK-4-4';
+B = butcher(mname);  s = numel(B(1,:))-1;
+fprintf('\nRunning with ERK integrator: %s (order = %i)\n',mname,B(s+1,1))
+[t,Y,ns,~] = solve_ERK(fn, Es, tout, Y0, B, rtol, atol, hmin, hmax, hmin);
 err_max = max(max(abs(Y'-Ytrue)));
 err_rms = sqrt(sum(sum((Y'-Ytrue).^2))/numel(Y));
 fprintf('Accuracy/Work Results:\n')

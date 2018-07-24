@@ -1,7 +1,7 @@
 % driver for Van der Pol ODE test problem:
 %    u' = v
 %    v' = (v - v*u^2/ep - u
-% where u(0) = 2,  v(0) = 0, and ep = 0.2, integrated over 
+% where u(0) = 2,  v(0) = 0, and ep = 0.2, integrated over
 % the time interval [0,12].
 %
 % Daniel R. Reynolds
@@ -38,11 +38,11 @@ set(gca,'FontSize',12)
 print('-dpng','vanderPol')
 
 
-% run with an explicit RK method
+% run with an embedded explicit RK method
 mname = 'Bogacki-Shampine-ERK';
 B = butcher(mname);  s = numel(B(1,:))-1;
 fprintf('\nRunning with ERK integrator: %s (order = %i)\n',mname,B(s+1,1))
-[t,Y,ns] = solve_ERK(fn, Es, tout, Y0, B, rtol, atol, hmin, hmax);
+[t,Y,ns,~] = solve_ERK(fn, Es, tout, Y0, B, rtol, atol, hmin, hmax, hmin);
 err_max = max(max(abs(Y'-Ytrue)));
 err_rms = sqrt(sum(sum((Y'-Ytrue).^2))/numel(Y));
 fprintf('Accuracy/Work Results:\n')
@@ -50,11 +50,35 @@ fprintf('   maxerr = %.5e,  rmserr = %.5e\n',err_max, err_rms);
 fprintf('   steps = %i (stages = %i)\n',ns,ns*s);
 
 
-% run with a diagonally-implicit RK method
+% run with a non-embedded explicit RK method
+mname = 'ERK-4-4';
+B = butcher(mname);  s = numel(B(1,:))-1;
+fprintf('\nRunning with ERK integrator: %s (order = %i)\n',mname,B(s+1,1))
+[t,Y,ns,~] = solve_ERK(fn, Es, tout, Y0, B, rtol, atol, hmin, hmax, hmin);
+err_max = max(max(abs(Y'-Ytrue)));
+err_rms = sqrt(sum(sum((Y'-Ytrue).^2))/numel(Y));
+fprintf('Accuracy/Work Results:\n')
+fprintf('   maxerr = %.5e,  rmserr = %.5e\n',err_max, err_rms);
+fprintf('   steps = %i (stages = %i)\n',ns,ns*s);
+
+
+% run with an embedded diagonally-implicit RK method
 mname = 'TRBDF2-ESDIRK';
 B = butcher(mname);  s = numel(B(1,:))-1;
 fprintf('\nRunning with DIRK integrator: %s (order = %i)\n',mname,B(s+1,1))
-[t,Y,ns,nl] = solve_DIRK(fn, Jn, tout, Y0, B, rtol, atol, hmin, hmax);
+[t,Y,ns,nl,~] = solve_DIRK(fn, Jn, tout, Y0, B, rtol, atol, hmin, hmax, hmin);
+err_max = max(max(abs(Y'-Ytrue)));
+err_rms = sqrt(sum(sum((Y'-Ytrue).^2))/numel(Y));
+fprintf('Accuracy/Work Results:\n')
+fprintf('   maxerr = %.5e,  rmserr = %.5e\n',err_max, err_rms);
+fprintf('   steps = %i (stages = %i), linear solves = %i\n',ns,ns*s,nl);
+
+
+% run with a non-embedded diagonally-implicit RK method
+mname = 'Cooper4-ESDIRK';
+B = butcher(mname);  s = numel(B(1,:))-1;
+fprintf('\nRunning with DIRK integrator: %s (order = %i)\n',mname,B(s+1,1))
+[t,Y,ns,nl,~] = solve_DIRK(fn, Jn, tout, Y0, B, rtol, atol, hmin, hmax, hmin);
 err_max = max(max(abs(Y'-Ytrue)));
 err_rms = sqrt(sum(sum((Y'-Ytrue).^2))/numel(Y));
 fprintf('Accuracy/Work Results:\n')
@@ -66,7 +90,7 @@ fprintf('   steps = %i (stages = %i), linear solves = %i\n',ns,ns*s,nl);
 mname = 'RadauIIA-2-3-IRK';
 B = butcher(mname);  s = numel(B(1,:))-1;
 fprintf('\nRunning with IRK integrator: %s (order = %i)\n',mname,B(s+1,1))
-[t,Y,ns,nl] = solve_IRK(fn, Jn, tout, Y0, B, rtol, atol, hmin, hmax);
+[t,Y,ns,nl,~] = solve_IRK(fn, Jn, tout, Y0, B, rtol, atol, hmin, hmax, hmin);
 err_max = max(max(abs(Y'-Ytrue)));
 err_rms = sqrt(sum(sum((Y'-Ytrue).^2))/numel(Y));
 fprintf('Accuracy/Work Results:\n')
