@@ -130,7 +130,7 @@ for i=2:so
 
    % update slow 'solution' as result from fast solve
    Ys = V(:,end);
-   tcur = t0 + c(i)*hs;
+   tcur = t0 + co(i)*hs;
    Fs(:,i) = fs(tcur,Ys);
 
    % update overall solution; note that since inner method has
@@ -144,7 +144,7 @@ end
 
 % all slow stages completed, if any of the time interval remains,
 % finish that off here
-if (c(so) < 1)
+if (co(so) < 1)
 
    % determine 'inner' ODE for this stage
    %   RHS function

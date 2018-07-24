@@ -59,6 +59,7 @@ ONEMSM = 1-sqrt(eps);  % coefficient to account for floating-point roundoff
 % initialize temporary variables
 t = tvals(1);
 Ynew = Y0;
+Jf = @(t,y) 0;  % no Jacobian required for explicit+explicit methods
 
 % iterate over output time steps
 for tstep = 1:N
@@ -70,9 +71,10 @@ for tstep = 1:N
       h = min([hs, tvals(tstep+1)-t]);   % stop at output times
 
       % call RMIS stepper to do the work, increment counters
-      [Ynew,m] = step_RMIS(fs,ff,~,t,Ynew,B,B,h,hf);
+      [Ynew,m] = step_RMIS(fs,ff,Jf,t,Ynew,B,B,h,hf);
       ns = ns + 1;
       nf = nf + m;
+      t  = t + h;
 
    end
 

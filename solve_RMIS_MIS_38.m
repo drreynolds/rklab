@@ -68,6 +68,7 @@ ERRTOL   = 1.1;          % upper bound on allowed step error
                            %   (in WRMS norm)
 % initialize temporary variables
 t = tvals(1);
+Jf = @(t,y) 0;  % no Jacobian required for explicit+explicit methods
 
 % set initial time step sizes
 h = hinit;
@@ -90,7 +91,7 @@ for tstep = 2:length(tvals)
       st_fail = 0;
 
       % call RMIS stepper to do the work, increment counters
-      [Ynew,Yerr,m,hf] = step_RMIS_MIS(fs,ff,~,t,Y0,B,B,h,hf,rtol,atol);
+      [Ynew,Yerr,m,hf] = step_RMIS_MIS(fs,ff,Jf,t,Y0,B,B,h,hf,rtol,atol);
       ns = ns + 1;
       nf = nf + m;
 
