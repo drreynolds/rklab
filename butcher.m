@@ -28,29 +28,30 @@ function B = butcher(method_name)
 % Explicit:
 %    ERK-1-1                            q=1, s=1
 %    Heun-Euler-ERK (*)                 q=2, s=2, p=1
+%    ERK-2-2                            q=2, s=2
 %    Ascher(2,3,2)-ERK                  q=2, s=3
 %    Ascher(2,2,2)-ERK                  q=2, s=3
-%    ARK3(2)4L[2]SA-ERK (*)             q=3, s=4, p=2
-%    Bogacki-Shampine-ERK (*)           q=3, s=4, p=2
-%    Cash-Karp-ERK (*)                  q=3, s=6, p=3
-%    ERK-2-2                            q=2, s=2
 %    ERK-3-3                            q=3, s=3
 %    Ascher(2,3,3)-ERK                  q=3, s=3
 %    SSPRK(3,3)-Shu-Osher-ERK           q=3, s=3
+%    Knoth-Wolke-ERK                    q=3, s=3
+%    ARK3(2)4L[2]SA-ERK (*)             q=3, s=4, p=2
+%    Bogacki-Shampine-ERK (*)           q=3, s=4, p=2
 %    Cooper4-ERK                        q=3, s=4
 %    Ascher(3,4,3)-ERK                  q=3, s=4
 %    Ascher(4,4,3)-ERK                  q=3, s=5
-%    Knoth-Wolke-ERK                    q=3, s=3
 %    3/8-Rule-ERK                       q=4, s=4
+%    ERK-4-4                            q=4, s=4
+%    Merson-4-3-ERK (*)                 q=4, s=5, p=3
+%      note: embedding is 5th-order if f(t,y) is linear in y
 %    Zonneveld-4-3-ERK (*)              q=4, s=5, p=3
 %    Fehlberg-ERK (*)                   q=4, s=6, p=3
 %    ARK4(3)6L[2]SA-ERK (*)             q=4, s=6, p=3
 %    Sayfy-Aburub-4-3-ERK (*)           q=4, s=6, p=3
 %    Dormand-Prince-ERK (*)             q=4, s=7, p=3
-%    ERK-4-4                            q=4, s=4
-%    Merson-5-4-ERK (*)                 q=5, s=5, p=4
-%    ARK5(4)8L[2]SA-ERK (*)             q=5, s=8, p=4
+%    Cash-Karp-ERK (*)                  q=5, s=6, p=4
 %    Cooper6-ERK                        q=5, s=6
+%    ARK5(4)8L[2]SA-ERK (*)             q=5, s=8, p=4
 %    Verner-6-5-ERK (*)                 q=6, s=8, p=5
 %    Fehlberg-8-7-ERK (*)               q=8, s=13, p=7
 %
@@ -61,15 +62,15 @@ function B = butcher(method_name)
 %    Ascher(2,2,2)-SDIRK                q=2, s=2
 %    Billington-SDIRK (*)               q=2, s=3, p=3
 %    TRBDF2-ESDIRK (*)                  q=2, s=3, p=3
-%    Kvaerno(4,2,3)-ESDIRK (*)          q=3, s=4, p=2
-%    ARK3(2)4L[2]SA-ESDIRK (*)          q=3, s=4, p=2
-%    SDIRK-5-4 (*)                      q=3, s=5, p=3
 %    Ascher(2,3,3)-SDIRK                q=3, s=2
 %    Ascher(3,4,3)-SDIRK                q=3, s=3
 %    EDIRK-3-3 pairs with SSPRK(3,3)    q=3, s=3
-%    ESDIRK-3-3 paris with SSPRK(3,3)   1=3, s=3
+%    ESDIRK-3-3 pairs with SSPRK(3,3)   q=3, s=3
+%    Kvaerno(4,2,3)-ESDIRK (*)          q=3, s=4, p=2
+%    ARK3(2)4L[2]SA-ESDIRK (*)          q=3, s=4, p=2
 %    Ascher(4,4,3)-SDIRK                q=3, s=4
 %    Cooper4-ESDIRK                     q=3, s=4
+%    SDIRK-5-4 (*)                      q=3, s=5, p=3
 %    TRX2-ESDIRK (*)                    q=4, s=3, p=2
 %    Kvaerno(5,3,4)-ESDIRK (*)          q=4, s=4, p=3
 %    Cash(5,3,4)-SDIRK (*)              q=4, s=5, p=3
@@ -712,15 +713,15 @@ elseif (strcmp(method_name,'ERK-4-4'))
    q = 4;
    B = [c, A; q, b];
 
-elseif (strcmp(method_name,'Merson-5-4-ERK'))
+elseif (strcmp(method_name,'Merson-4-3-ERK'))
 
    A = [0, 0, 0, 0, 0; 1/3, 0, 0, 0, 0; 1/6, 1/6, 0, 0, 0; ...
         1/8, 0, 3/8, 0, 0; 1/2, 0, -3/2, 2, 0];
-   b = [1/6, 0, 0, 2/3, 1/6];
-   b2 = [1/10, 0, 3/10, 2/5, 1/5];
+   b = [1/10, 0, 3/10, 2/5, 1/5];
+   b2 = [1/6, 0, 0, 2/3, 1/6];
    c = [0; 1/3; 1/3; 1/2; 1];
-   q = 5;
-   p = 4;
+   q = 4;
+   p = 3;
    B = [c, A; q, b; p, b2];
 
 elseif (strcmp(method_name,'Zonneveld-4-3-ERK'))

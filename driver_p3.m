@@ -105,7 +105,7 @@ fprintf('   steps = %i (stages = %i), linear solves = %i\n',ns,ns*s,nl);
 
 
 % $$$ % run with an embedded explicit RK method
-% $$$ mname = 'Merson-5-4-ERK';
+% $$$ mname = 'Merson-4-3-ERK';
 % $$$ B = butcher(mname);  s = numel(B(1,:))-1;
 % $$$ fprintf('\nRunning with ERK integrator: %s (order = %i)\n',mname,B(s+1,1))
 % $$$ [t,Y,ns,~] = solve_ERK(fn, Es, tout, Y0, B, rtol, atol, hmin, hmax, hmin);
