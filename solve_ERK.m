@@ -114,19 +114,20 @@ for tstep = 2:length(tvals)
       % reset step failure flag
       st_fail = 0;
 
-      % compute updated solution and error estimate (if possible)
+      % compute updated solution and error estimate (if possible);
+      % increment internal time steps counter
       if (adaptive)
          if (embedded)
             [Ynew,Yerr] = ERKstep_embedded(fcn, Y0, t, h, B);
+            nsteps = nsteps + 1;
          else
             [Ynew,Yerr] = ERKstep_Richardson(fcn, Y0, t, h, B);
+            nsteps = nsteps + 3;
          end
       else
          [Ynew] = ERKstep_basic(fcn, Y0, t, h, B);
+         nsteps = nsteps + 1;
       end
-
-      % increment number of internal time steps taken
-      nsteps = nsteps + 1;
 
       % if time step adaptivity enabled, check step accuracy
       if (adaptive)
@@ -205,10 +206,10 @@ end  % time step loop
 end
 
 
+%------------------------- Utility routines -------------------------%
+
 
 function [y,yerr] = ERKstep_embedded(fcn, y0, t0, h, B)
-% usage: [y,yerr] = ERKstep_embedded(fcn, y0, t0, h, B)
-%
 % Inputs:
 %    fcn = ODE RHS function, f(t,y)
 %    y0  = solution at beginning of time step
@@ -323,6 +324,7 @@ function [y,yerr] = ERKstep_Richardson(fcn, y0, t0, h, B)
    c = B(1:s,1);         % stage time fraction array
    b = (B(s+1,2:s+1))';  % solution weights (convert to column)
    A = B(1:s,2:s+1);     % RK coefficients
+   p = B(Bcols,1);
 
    % initialize storage for RHS vectors
    k = zeros(length(y0),s);
@@ -379,8 +381,8 @@ function [y,yerr] = ERKstep_Richardson(fcn, y0, t0, h, B)
 
 
    % Compute Richardson extrapolant and error estimate
-   y = 2*y2-y1;
-   yerr = y-y2;
+   y = (2^p)/(2^p-1)*y2 - 1/(2^p-1)*y1;
+   yerr = 1/(2^p-1)*(y1-y2);
 
 % end of function
 end
