@@ -1,28 +1,30 @@
-function [tvals,Y,nsteps,lits,h] = solve_DIRK(fcn,Jfcn,tvals,Y0,B,rtol,atol,hmin,hmax,hinit)
-% usage: [tvals,Y,nsteps,lits,h] = solve_DIRK(fcn,Jfcn,tvals,Y0,B,rtol,atol,hmin,hmax,hinit)
+function [tvals, Y, nsteps, lits] = solve_ARK(fe,fi,Ji,tvals,Y0,Be,Bi,rtol,atol,hmin,hmax,hinit)
+% usage: [tvals, Y, nsteps, lits] = solve_ARK(fe,fi,Ji,tvals,Y0,Be,Bi,rtol,atol,hmin,hmax,hinit)
 %
-% Adaptive time step diagonally-implicit Runge-Kutta solver for the
+% Adaptive time step additive Runge-Kutta solver for the
 % vector-valued ODE problem
-%     y' = F(t,Y), t in tvals, y in R^m,
+%     y' = fe(t,Y) + fi(t,Y), t in tvals, y in R^m,
 %     Y(t0) = [y1(t0), y2(t0), ..., ym(t0)]'.
 %
 % Inputs:
-%     fcn    = string holding function name for F(t,Y)
-%     Jfcn   = string holding function name for Jacobian of F, J(t,Y)
+%     fe     = function handle for fe(t,Y)
+%     fi     = function handle for fi(t,Y)
+%     Ji     = function handle for Jacobian of fi, J(t,Y)
 %     tvals  = [t0, t1, t2, ..., tN]
 %     Y0     = initial value array (column vector of length m)
-%     B      = Butcher matrix for IRK coefficients, of the form
-%                 B = [c A;
-%                      q b;
-%                      p b2 ]
-%              Here, c is a vector of stage time fractions (s-by-1),
-%                    A is a matrix of Butcher coefficients (s-by-s),
+%     Be,Bi  = Butcher table matrices for ARK coefficients, of the form
+%                 Be = [ce Ae;       Bi = [ci Ai;
+%                       q  be;             q  bi;
+%                       p  be2 ]           p  bi2 ]
+%              Here, ce,ci are vectors of stage time fractions (s-by-1),
+%                    Ae,Ai are matrices of Butcher coefficients (s-by-s),
 %                    q is an integer denoting the method order of accuracy,
-%                    b is a vector of solution weights (1-by-s),
+%                    be,bi are vectors of solution weights (1-by-s),
 %                    p is an integer denoting the embedding order of accuracy,
-%                    b2 is a vector of embedding weights (1-by-s),
-%              The [p, b2] row is optional to support embedded DIRK
-%              methods.
+%                    be2,bi2 are vectors of embedding weights (1-by-s),
+%              The [p, be2] and [p, bi2] rows are optional.  If
+%              both of those are not provided the method will default to
+%              taking fixed step sizes of size hmin.
 %     rtol   = desired relative error of solution  (scalar)
 %     atol   = desired absolute error of solution  (vector or scalar)
 %     hmin   = minimum internal time step size (hmin <= t(i)-t(i-1), for all i)
@@ -35,16 +37,29 @@ function [tvals,Y,nsteps,lits,h] = solve_DIRK(fcn,Jfcn,tvals,Y0,B,rtol,atol,hmin
 %               y(t*) is a column vector of length m.
 %     nsteps = number of internal time steps taken by method
 %     lits   = number of linear solves required by method
-%     h      = last internal step size
 %
 % Note: to run in fixed-step mode, call with hmin=hmax as the desired
-% time step size.
+% time step size, and set the tolerances to large positive numbers.
 %
 % Daniel R. Reynolds
 % Department of Mathematics
 % Southern Methodist University
-% July 2018
+% March 2017
 % All Rights Reserved
+
+% check for compatible Be,Bi tables
+if (size(Be) ~= size(Bi))
+   error('solve_ARK error: Be and Bi must have the same size')
+end
+s = size(Be,2) - 1;          % number of stages
+if (Be(s+1,1) ~= Bi(s+1,1))
+   error('solve_ARK error: Be and Bi must have the same method order')
+end
+if (size(Be,1) > size(Be,2))
+   if (Be(s+1,2) ~= Bi(s+1,2))
+      error('solve_ARK error: Be and Bi must have the same embedding order')
+   end
+end
 
 % determine whether adaptivity is desired
 adaptive = 0;
@@ -54,19 +69,20 @@ end
 
 % if adaptivity enabled, determine approach for error estimation,
 % and set the lower-order of accuracy accordingly
-[Brows, Bcols] = size(B);
+[Brows, Bcols] = size(Be);
 embedded = 0;
 p = 0;
 if (hmax > hmin)      % check whether adaptivity is desired
    if (Brows > Bcols)
-      if (max(abs(B(Bcols+1,2:Bcols))) > eps)   % check for embedding coeffs
+      if ( (max(abs(Be(Bcols+1,2:Bcols))) > eps) && ...
+           (max(abs(Bi(Bcols+1,2:Bcols))) > eps) )    % check for embedding coeffs
          embedded = 1;
-         p = B(Bcols+1,1);
+         p = Be(Bcols+1,1);
       end
    end
 end
 if (embedded == 0)
-   p = B(Bcols,1);
+   p = Be(Bcols,1);
 end
 
 % initialize output arrays
@@ -110,21 +126,21 @@ for tstep = 2:length(tvals)
       h = min([h, hmax]);            % maximum time step size
       h = min([h, tvals(tstep)-t]);  % stop at output time
 
-      % reset step failure flag
+      % reset stage failure flag
       st_fail = 0;
 
       % call stepper routine to take the step and compute error
       % estimate (if applicable); increment internal time steps counter
       if (adaptive)
          if (embedded)
-            [Ynew,Yerr,cfail,lin] = DIRKstep_embedded(fcn, Jfcn, Y0, t, h, B);
+            [Ynew,Yerr,cfail,lin] = ARKstep_embedded(fe, fi, Ji, Y0, t, h, Be, Bi);
             nsteps = nsteps + 1;
          else
-            [Ynew,Yerr,cfail,lin] = DIRKstep_Richardson(fcn, Jfcn, Y0, t, h, B);
+            [Ynew,Yerr,cfail,lin] = ARKstep_Richardson(fe, fi, Ji, Y0, t, h, Be, Bi);
             nsteps = nsteps + 3;
          end
       else
-         [Ynew,cfail,lin] = DIRKstep_basic(fcn, Jfcn, Y0, t, h, B);
+         [Ynew,cfail,lin] = ARKstep_basic(fe, fi, Ji, Y0, t, h, Be, Bi);
          nsteps = nsteps + 1;
       end
 
@@ -138,7 +154,7 @@ for tstep = 2:length(tvals)
       end
 
       % if stages succeeded and time step adaptivity enabled, check step accuracy
-      if ((st_fail == 0) && adaptive)
+      if ((st_fail == 0) & adaptive)
 
          % estimate error in current step
          err_step = max(norm(Yerr./(rtol*Ynew + atol),inf), eps);
@@ -197,20 +213,23 @@ for tstep = 2:length(tvals)
 
 end  % time step loop
 
-% end solve_DIRK function
+% end solve_ARK function
 end
 
 
 %------------------------- Utility routines -------------------------%
 
 
-function [y,yerr,cfail,lits] = DIRKstep_embedded(fcn, Jfcn, y0, t0, h, B)
+function [y,yerr,cfail,lits] = ARKstep_embedded(fe, fi, Ji, y0, t0, h, Be, Bi)
 % Inputs:
-%    fcn = ODE RHS function, f(t,y)
-%    y0  = solution at beginning of time step
-%    t0  = 'time' at beginning of time step
-%    h   = step size to take
-%    B   = Butcher table to use
+%    fe = function handle for fe(t,Y)
+%    fi = function handle for fi(t,Y)
+%    Ji = function handle for Jacobian of fi, J(t,Y)
+%    y0 = solution at beginning of time step
+%    t0 = 'time' at beginning of time step
+%    h  = step size to take
+%    Be = explicit Butcher table to use
+%    Bi = implicit Butcher table to use
 %
 % Outputs:
 %    y     = new solution at t0+h
@@ -218,16 +237,24 @@ function [y,yerr,cfail,lits] = DIRKstep_embedded(fcn, Jfcn, y0, t0, h, B)
 %    cfail = convergence failure flag (0=success; 1=failure)
 %    lits  = total linear iterations for step
 
-   % extract ERK method information from B
-   [Brows, Bcols] = size(B);
-   s = Bcols - 1;        % number of stages
-   c = B(1:s,1);         % stage time fraction array
-   b = (B(s+1,2:s+1))';  % solution weights (convert to column)
-   A = B(1:s,2:s+1);     % RK coefficients
-   d = (B(s+2,2:s+1))';  % embedding coefficients
+   % extract ERK method information from Be
+   [Brows, Bcols] = size(Be);
+   s = Bcols - 1;          % number of stages
+   ce = Be(1:s,1);         % stage time fraction array
+   be = (Be(s+1,2:s+1))';  % solution weights (convert to column)
+   Ae = Be(1:s,2:s+1);     % RK coefficients
+   de = (Be(s+2,2:s+1))';  % embedding coefficients
+
+   % extract DIRK method information from Bi
+   [Brows, Bcols] = size(Bi);
+   ci = Bi(1:s,1);         % stage time fraction array
+   bi = (Bi(s+1,2:s+1))';  % solution weights (convert to column)
+   Ai = Bi(1:s,2:s+1);     % RK coefficients
+   di = (Be(s+2,2:s+1))';  % embedding coefficients
 
    % initialize storage for RHS vectors, outputs
-   k = zeros(length(y0),s);
+   ke = zeros(length(y0),s);
+   ki = zeros(length(y0),s);
    lits = 0;
    cfail = 0;
 
@@ -237,17 +264,19 @@ function [y,yerr,cfail,lits] = DIRKstep_embedded(fcn, Jfcn, y0, t0, h, B)
    newt_stol  = 1e-10;        % Newton solver solution tolerance
 
    % set function names for Newton solver residual/Jacobian
-   Fun = @F_DIRK;
-   Jac = @A_DIRK;
+   Fun = @F_ARK;
+   Jac = @A_ARK;
 
    % set Fdata values for this step
-   Fdata.frhs = fcn;    % ODE RHS function name
-   Fdata.Jrhs = Jfcn;   % ODE RHS Jacobian function name
-   Fdata.B    = B;      % Butcher table
-   Fdata.s    = s;      % number of stages
-   Fdata.h    = h;      % current step size
-   Fdata.yold = y0;     % solution from previous step
-   Fdata.t    = t0;     % time of last successful step
+   Fdata.fe   = fe;    % ODE RHS function names
+   Fdata.fi   = fi;
+   Fdata.Ji   = Ji;    % ODE RHS Jacobian function name
+   Fdata.Be   = Be;    % Butcher tables
+   Fdata.Bi   = Bi;
+   Fdata.s    = s;     % number of stages
+   Fdata.h    = h;     % current step size
+   Fdata.yold = y0;    % solution from previous step
+   Fdata.t    = t0;    % time of last successful step
 
    % loop over stages
    for stage = 1:s
@@ -259,14 +288,14 @@ function [y,yerr,cfail,lits] = DIRKstep_embedded(fcn, Jfcn, y0, t0, h, B)
       Fdata.stage = stage;
 
       % construct RHS comprised of old time data
-      %    zi = y_n + h*sum_{j=1}^s (a(i,j)*fj)
+      %    zi = y_n + h*ai(i,i)*fi(i) + h*sum_{j=1}^{i-1} [ae(i,j)*fe(j) + ai(i,j)*fi(j)]
       % <=>
-      %    zi - h*(a(i,i)*fi) = y_n + h*sum_{j=1}^{i-1} (a(i,j)*fj)
+      %    zi - h*(ai(i,i)*fi) = y_n + h*sum_{j=1}^{i-1} [ae(i,j)*fe(j) + ai(i,j)*fi(j)]
       % =>
-      %    rhs = y_n + h*sum_{j=1}^{i-1} (a(i,j)*fj)
+      %    rhs = y_n + h*sum_{j=1}^{i-1} [ae(i,j)*fe(j) + ai(i,j)*fi(j)]
       Fdata.rhs = y0;
       for j = 1:stage-1
-         Fdata.rhs = Fdata.rhs + h*A(stage,j)*k(:,j);
+         Fdata.rhs = Fdata.rhs + h*Ae(stage,j)*ke(:,j) + h*Ai(stage,j)*ki(:,j);
       end
 
       % call Newton solver to compute new stage solution
@@ -283,42 +312,57 @@ function [y,yerr,cfail,lits] = DIRKstep_embedded(fcn, Jfcn, y0, t0, h, B)
       end
 
       % construct new stage RHS
-      k(:,stage) = fcn(t0+h*c(stage),z);
+      ke(:,stage) = fe(t0+h*ce(stage),z);
+      ki(:,stage) = fi(t0+h*ci(stage),z);
 
    end
 
    % compute new solution and error estimate
-   %    ynew = yold + h*sum(b(j)*fj)
-   y = y0 + h*k*b;
-   yerr = h*k*(b-d);
+   %    ynew = yold + h*sum(be(j)*fe(j)) + h*sum(bi(j)*fi(j))
+   y = y0 + h*ke*be + h*ki*bi;
+   yerr = h*ke*(be-de) + h*ki*(bi-di);
 
 % end of function
 end
 
 
 
-function [y,cfail,lits] = DIRKstep_basic(fcn, Jfcn, y0, t0, h, B)
+
+
+function [y,cfail,lits] = ARKstep_basic(fe, fi, Ji, y0, t0, h, Be, Bi)
 % Inputs:
-%    fcn = ODE RHS function, f(t,y)
-%    y0  = solution at beginning of time step
-%    t0  = 'time' at beginning of time step
-%    h   = step size to take
-%    B   = Butcher table to use
+%    fe = function handle for fe(t,Y)
+%    fi = function handle for fi(t,Y)
+%    Ji = function handle for Jacobian of fi, J(t,Y)
+%    y0 = solution at beginning of time step
+%    t0 = 'time' at beginning of time step
+%    h  = step size to take
+%    Be = explicit Butcher table to use
+%    Bi = implicit Butcher table to use
 %
 % Outputs:
 %    y     = new solution at t0+h
 %    cfail = convergence failure flag (0=success; 1=failure)
 %    lits  = total linear iterations for step
 
-   % extract ERK method information from B
-   [Brows, Bcols] = size(B);
-   s = Bcols - 1;        % number of stages
-   c = B(1:s,1);         % stage time fraction array
-   b = (B(s+1,2:s+1))';  % solution weights (convert to column)
-   A = B(1:s,2:s+1);     % RK coefficients
+   % extract ERK method information from Be
+   [Brows, Bcols] = size(Be);
+   s = Bcols - 1;          % number of stages
+   ce = Be(1:s,1);         % stage time fraction array
+   be = (Be(s+1,2:s+1))';  % solution weights (convert to column)
+   Ae = Be(1:s,2:s+1);     % RK coefficients
+   de = (Be(s+2,2:s+1))';  % embedding coefficients
+
+   % extract DIRK method information from Bi
+   [Brows, Bcols] = size(Bi);
+   ci = Bi(1:s,1);         % stage time fraction array
+   bi = (Bi(s+1,2:s+1))';  % solution weights (convert to column)
+   Ai = Bi(1:s,2:s+1);     % RK coefficients
+   di = (Be(s+2,2:s+1))';  % embedding coefficients
 
    % initialize storage for RHS vectors, outputs
-   k = zeros(length(y0),s);
+   ke = zeros(length(y0),s);
+   ki = zeros(length(y0),s);
    lits = 0;
    cfail = 0;
 
@@ -328,17 +372,19 @@ function [y,cfail,lits] = DIRKstep_basic(fcn, Jfcn, y0, t0, h, B)
    newt_stol  = 1e-10;        % Newton solver solution tolerance
 
    % set function names for Newton solver residual/Jacobian
-   Fun = @F_DIRK;
-   Jac = @A_DIRK;
+   Fun = @F_ARK;
+   Jac = @A_ARK;
 
    % set Fdata values for this step
-   Fdata.frhs = fcn;    % ODE RHS function name
-   Fdata.Jrhs = Jfcn;   % ODE RHS Jacobian function name
-   Fdata.B    = B;      % Butcher table
-   Fdata.s    = s;      % number of stages
-   Fdata.h    = h;      % current step size
-   Fdata.yold = y0;     % solution from previous step
-   Fdata.t    = t0;     % time of last successful step
+   Fdata.fe   = fe;    % ODE RHS function names
+   Fdata.fi   = fi;
+   Fdata.Ji   = Ji;    % ODE RHS Jacobian function name
+   Fdata.Be   = Be;    % Butcher tables
+   Fdata.Bi   = Bi;
+   Fdata.s    = s;     % number of stages
+   Fdata.h    = h;     % current step size
+   Fdata.yold = y0;    % solution from previous step
+   Fdata.t    = t0;    % time of last successful step
 
    % loop over stages
    for stage = 1:s
@@ -350,14 +396,14 @@ function [y,cfail,lits] = DIRKstep_basic(fcn, Jfcn, y0, t0, h, B)
       Fdata.stage = stage;
 
       % construct RHS comprised of old time data
-      %    zi = y_n + h*sum_{j=1}^s (a(i,j)*fj)
+      %    zi = y_n + h*ai(i,i)*fi(i) + h*sum_{j=1}^{i-1} [ae(i,j)*fe(j) + ai(i,j)*fi(j)]
       % <=>
-      %    zi - h*(a(i,i)*fi) = y_n + h*sum_{j=1}^{i-1} (a(i,j)*fj)
+      %    zi - h*(ai(i,i)*fi) = y_n + h*sum_{j=1}^{i-1} [ae(i,j)*fe(j) + ai(i,j)*fi(j)]
       % =>
-      %    rhs = y_n + h*sum_{j=1}^{i-1} (a(i,j)*fj)
+      %    rhs = y_n + h*sum_{j=1}^{i-1} [ae(i,j)*fe(j) + ai(i,j)*fi(j)]
       Fdata.rhs = y0;
       for j = 1:stage-1
-         Fdata.rhs = Fdata.rhs + h*A(stage,j)*k(:,j);
+         Fdata.rhs = Fdata.rhs + h*Ae(stage,j)*ke(:,j) + h*Ai(stage,j)*ki(:,j);
       end
 
       % call Newton solver to compute new stage solution
@@ -374,25 +420,29 @@ function [y,cfail,lits] = DIRKstep_basic(fcn, Jfcn, y0, t0, h, B)
       end
 
       % construct new stage RHS
-      k(:,stage) = fcn(t0+h*c(stage),z);
+      ke(:,stage) = fe(t0+h*ce(stage),z);
+      ki(:,stage) = fi(t0+h*ci(stage),z);
 
    end
 
-   % compute new solution,  ynew = yold + h*sum(b(j)*fj)
-   y = y0 + h*k*b;
+   % compute new solution,  ynew = yold + h*sum(be(j)*fe(j)) + h*sum(bi(j)*fi(j))
+   y = y0 + h*ke*be + h*ki*bi;
 
 % end of function
 end
 
 
 
-function [y,yerr,cfail,lits] = DIRKstep_Richardson(fcn, Jfcn, y0, t0, h, B)
+function [y,yerr,cfail,lits] = ARKstep_Richardson(fe, fi, Ji, y0, t0, h, Be, Bi)
 % Inputs:
-%    fcn = ODE RHS function, f(t,y)
-%    y0  = solution at beginning of time step
-%    t0  = 'time' at beginning of time step
-%    h   = step size to take
-%    B   = Butcher table to use
+%    fe = function handle for fe(t,Y)
+%    fi = function handle for fi(t,Y)
+%    Ji = function handle for Jacobian of fi, J(t,Y)
+%    y0 = solution at beginning of time step
+%    t0 = 'time' at beginning of time step
+%    h  = step size to take
+%    Be = explicit Butcher table to use
+%    Bi = implicit Butcher table to use
 %
 % Outputs:
 %    y     = new solution at t0+h
@@ -400,16 +450,25 @@ function [y,yerr,cfail,lits] = DIRKstep_Richardson(fcn, Jfcn, y0, t0, h, B)
 %    cfail = convergence failure flag (0=success; 1=failure)
 %    lits  = total linear iterations for step
 
-   % extract DIRK method information from B
-   [Brows, Bcols] = size(B);
-   s = Bcols - 1;        % number of stages
-   c = B(1:s,1);         % stage time fraction array
-   b = (B(s+1,2:s+1))';  % solution weights (convert to column)
-   A = B(1:s,2:s+1);     % RK coefficients
-   p = B(Bcols,1);
+   % extract ERK method information from Be
+   [Brows, Bcols] = size(Be);
+   s = Bcols - 1;          % number of stages
+   ce = Be(1:s,1);         % stage time fraction array
+   be = (Be(s+1,2:s+1))';  % solution weights (convert to column)
+   Ae = Be(1:s,2:s+1);     % RK coefficients
+   de = (Be(s+2,2:s+1))';  % embedding coefficients
+   p = Be(Bcols,1);
+
+   % extract DIRK method information from Bi
+   [Brows, Bcols] = size(Bi);
+   ci = Bi(1:s,1);         % stage time fraction array
+   bi = (Bi(s+1,2:s+1))';  % solution weights (convert to column)
+   Ai = Bi(1:s,2:s+1);     % RK coefficients
+   di = (Be(s+2,2:s+1))';  % embedding coefficients
 
    % initialize storage for RHS vectors, outputs
-   k = zeros(length(y0),s);
+   ke = zeros(length(y0),s);
+   ki = zeros(length(y0),s);
    lits = 0;
    cfail = 0;
 
@@ -419,17 +478,19 @@ function [y,yerr,cfail,lits] = DIRKstep_Richardson(fcn, Jfcn, y0, t0, h, B)
    newt_stol  = 1e-10;        % Newton solver solution tolerance
 
    % set function names for Newton solver residual/Jacobian
-   Fun = @F_DIRK;
-   Jac = @A_DIRK;
+   Fun = @F_ARK;
+   Jac = @A_ARK;
 
    % set Fdata values for this step
-   Fdata.frhs = fcn;    % ODE RHS function name
-   Fdata.Jrhs = Jfcn;   % ODE RHS Jacobian function name
-   Fdata.B    = B;      % Butcher table
-   Fdata.s    = s;      % number of stages
-   Fdata.h    = h;      % current step size
-   Fdata.yold = y0;     % solution from previous step
-   Fdata.t    = t0;     % time of last successful step
+   Fdata.fe   = fe;    % ODE RHS function names
+   Fdata.fi   = fi;
+   Fdata.Ji   = Ji;    % ODE RHS Jacobian function name
+   Fdata.Be   = Be;    % Butcher tables
+   Fdata.Bi   = Bi;
+   Fdata.s    = s;     % number of stages
+   Fdata.h    = h;     % current step size
+   Fdata.yold = y0;    % solution from previous step
+   Fdata.t    = t0;    % time of last successful step
 
    % First compute solution with a single step
    for stage = 1:s
@@ -441,14 +502,14 @@ function [y,yerr,cfail,lits] = DIRKstep_Richardson(fcn, Jfcn, y0, t0, h, B)
       Fdata.stage = stage;
 
       % construct RHS comprised of old time data
-      %    zi = y_n + h*sum_{j=1}^s (a(i,j)*fj)
+      %    zi = y_n + h*ai(i,i)*fi(i) + h*sum_{j=1}^{i-1} [ae(i,j)*fe(j) + ai(i,j)*fi(j)]
       % <=>
-      %    zi - h*(a(i,i)*fi) = y_n + h*sum_{j=1}^{i-1} (a(i,j)*fj)
+      %    zi - h*(ai(i,i)*fi) = y_n + h*sum_{j=1}^{i-1} [ae(i,j)*fe(j) + ai(i,j)*fi(j)]
       % =>
-      %    rhs = y_n + h*sum_{j=1}^{i-1} (a(i,j)*fj)
+      %    rhs = y_n + h*sum_{j=1}^{i-1} [ae(i,j)*fe(j) + ai(i,j)*fi(j)]
       Fdata.rhs = y0;
       for j = 1:stage-1
-         Fdata.rhs = Fdata.rhs + h*A(stage,j)*k(:,j);
+         Fdata.rhs = Fdata.rhs + h*Ae(stage,j)*ke(:,j) + h*Ai(stage,j)*ki(:,j);
       end
 
       % call Newton solver to compute new stage solution
@@ -465,12 +526,13 @@ function [y,yerr,cfail,lits] = DIRKstep_Richardson(fcn, Jfcn, y0, t0, h, B)
       end
 
       % construct new stage RHS
-      k(:,stage) = fcn(t0+h*c(stage),z);
+      ke(:,stage) = fe(t0+h*ce(stage),z);
+      ki(:,stage) = fi(t0+h*ci(stage),z);
 
    end
 
-   % compute full-step solution,  ynew = yold + h*sum(b(j)*fj)
-   y1 = y0 + h*k*b;
+   % compute full step solution,  ynew = yold + h*sum(be(j)*fe(j)) + h*sum(bi(j)*fi(j))
+   y1 = y0 + h*ke*be + h*ki*bi;
 
 
    % Second compute solution with two half steps
@@ -481,7 +543,7 @@ function [y,yerr,cfail,lits] = DIRKstep_Richardson(fcn, Jfcn, y0, t0, h, B)
       Fdata.stage = stage;
       Fdata.rhs = y0;
       for j = 1:stage-1
-         Fdata.rhs = Fdata.rhs + h/2*A(stage,j)*k(:,j);
+         Fdata.rhs = Fdata.rhs + h/2*Ae(stage,j)*ke(:,j) + h/2*Ai(stage,j)*ki(:,j);
       end
       [z,lin,ierr] = newton(Fun, Jac, z, Fdata, newt_ftol, newt_stol, newt_maxit);
       lits = lits + lin;
@@ -489,17 +551,18 @@ function [y,yerr,cfail,lits] = DIRKstep_Richardson(fcn, Jfcn, y0, t0, h, B)
          cfail = 1;
          return;
       end
-      k(:,stage) = fcn(t0+h/2*c(stage),z);
+      ke(:,stage) = fe(t0+h*ce(stage),z);
+      ki(:,stage) = fi(t0+h*ci(stage),z);
    end
-   y2 = y0 + h/2*k*b;
+   y2 = y0 + h/2*ke*be + h/2*ki*bi;
    Fdata.yold = y2;
    Fdata.t    = t0+h/2;
    for stage = 1:s
       z = y2;
       Fdata.stage = stage;
-      Fdata.rhs = y2;
+      Fdata.rhs = y0;
       for j = 1:stage-1
-         Fdata.rhs = Fdata.rhs + h/2*A(stage,j)*k(:,j);
+         Fdata.rhs = Fdata.rhs + h/2*Ae(stage,j)*ke(:,j) + h/2*Ai(stage,j)*ki(:,j);
       end
       [z,lin,ierr] = newton(Fun, Jac, z, Fdata, newt_ftol, newt_stol, newt_maxit);
       lits = lits + lin;
@@ -507,9 +570,10 @@ function [y,yerr,cfail,lits] = DIRKstep_Richardson(fcn, Jfcn, y0, t0, h, B)
          cfail = 1;
          return;
       end
-      k(:,stage) = fcn(t0+h/2*(1+c(stage)),z);
+      ke(:,stage) = fe(t0+h*ce(stage),z);
+      ki(:,stage) = fi(t0+h*ci(stage),z);
    end
-   y2 = y2 + h/2*k*b;
+   y2 = y2 + h/2*ke*be + h/2*ki*bi;
 
 
    % Compute Richardson extrapolant and error estimate
@@ -521,7 +585,7 @@ end
 
 
 
-function F = F_DIRK(z, Fdata)
+function F = F_ARK(z, Fdata)
 % Inputs:  z = current guess for stage solution
 %          Fdata = structure containing extra information for evaluating F.
 % Outputs: F = residual at current guess
@@ -530,46 +594,46 @@ function F = F_DIRK(z, Fdata)
 % stage solution, through calling the user-supplied (in Fdata) ODE
 % right-hand side function.
 
-   % extract DIRK method information from Fdata
-   B = Fdata.B;
-   [Brows, Bcols] = size(B);
+   % extract ARK method information from Fdata
+   Bi = Fdata.Bi;
+   [Brows, Bcols] = size(Bi);
    s  = Bcols - 1;
-   c  = B(1:s,1);
-   A  = B(1:s,2:s+1);
+   ci = Bi(1:s,1);
+   Ai = Bi(1:s,2:s+1);
    h  = Fdata.h;
    st = Fdata.stage;
-   t  = Fdata.t + Fdata.h*c(st);
+   t  = Fdata.t + Fdata.h*ci(st);
 
-   % form the DIRK residual
-   %    F = z - rhs - h*(a(stage,stage)*fstage)
-   F = z - Fdata.rhs - h*A(st,st)*Fdata.frhs(t, z);
+   % form the ARK residual
+   %    F = z - rhs - h*(ai(stage,stage)*fstage)
+   F = z - Fdata.rhs - h*Ai(st,st)*Fdata.fi(t, z);
 
 % end of function
 end
 
 
 
-function Amat = A_DIRK(z, Fdata)
+function Amat = A_ARK(z, Fdata)
 % Inputs:  z = current guess for stage solution
 %          Fdata = structure containing extra information for evaluating F.
 % Outputs: Amat = Jacobian at current guess
 %
 % This function computes the Jacobian of each intermediate stage residual
-% for a multi-stage DIRK method, through calling the user-supplied (in
+% for a multi-stage ARK method, through calling the user-supplied (in
 % Fdata) ODE Jacobian function.
 
-   % extract DIRK method information from Fdata
-   B = Fdata.B;
-   [Brows, Bcols] = size(B);
-   s  = Bcols - 1;
-   c  = B(1:s,1);
-   b  = (B(s+1,2:s+1))';
-   A  = B(1:s,2:s+1);
-   st = Fdata.stage;
-   t  = Fdata.t + Fdata.h*c(st);
+   % extract ARK method information from Fdata
+   Bi = Fdata.Bi;
+   [Brows, Bcols] = size(Bi);
+   s   = Bcols - 1;
+   ci  = Bi(1:s,1);
+   bi  = (Bi(s+1,2:s+1))';
+   Ai  = Bi(1:s,2:s+1);
+   st  = Fdata.stage;
+   t   = Fdata.t + Fdata.h*ci(st);
 
-   % form the DIRK Jacobian
-   Amat = eye(length(z)) - Fdata.h*A(st,st)*Fdata.Jrhs(t, z);
+   % form the ARK Jacobian
+   Amat = eye(length(z)) - Fdata.h*Ai(st,st)*Fdata.Ji(t, z);
 
-   % end of function
+% end of function
 end

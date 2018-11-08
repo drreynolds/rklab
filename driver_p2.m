@@ -8,29 +8,32 @@
 % Daniel R. Reynolds
 % Department of Mathematics
 % Southern Methodist University
-% August 2012
+% March 2017
 % All Rights Reserved
 clear
 
 % set problem parameters
 a = 1;
 b = 3.5;
-%ep = 5e-6;
+global ep;
 ep = 1e-3;
 fn = @(t,y) [a - (y(3)+1)*y(1) + y(1)*y(1)*y(2);
              y(3)*y(1) - y(1)*y(1)*y(2);
              (b-y(3))/ep - y(3)*y(1)];
-Jn = @(t,y) [-(y(3)+1) + 2*y(1)*y(2),   y(1)*y(1),     -y(1);
-             y(3) - 2*y(1)*y(2),    -y(1)*y(1),      y(1);
-             -y(3),               0,       -1/ep - y(1)];
-global Pdata;
-Pdata.ep = ep;
+fe = @(t,y) [a - (y(3)+1)*y(1) + y(1)*y(1)*y(2);
+             y(3)*y(1) - y(1)*y(1)*y(2);
+             -y(3)*y(1)];
+fi = @(t,y) [0; 0; (b-y(3))/ep];
+Jn = @(t,y) [-(y(3)+1) + 2*y(1)*y(2),  y(1)*y(1),  -y(1);
+             y(3) - 2*y(1)*y(2),  -y(1)*y(1),  y(1);
+             -y(3),  0,  -1/ep - y(1)];
+Ji = @(t,y) [0, 0, 0; 0, 0, 0; 0, 0, -1/ep];
 Es = @EStab_p2;
 Tf = 10;
 tout = linspace(0,Tf,100);
 hmin = 1e-7;
 hmax = 1.0;
-rtol = 1e-3;
+rtol = 1e-4;
 atol = 1e-14*ones(3,1);
 u0 = 1.2;
 v0 = 3.1;
@@ -84,6 +87,21 @@ fprintf('   maxerr = %.5e,  rmserr = %.5e\n',err_max, err_rms);
 fprintf('   steps = %i (stages = %i), linear solves = %i\n',ns,ns*s,nl);
 
 
+% run with an embedded ARK method
+mname1 = 'ARK4(3)6L[2]SA-ERK';
+Be = butcher(mname1);  s = numel(Be(1,:))-1;
+mname2 = 'ARK4(3)6L[2]SA-ESDIRK';
+Bi = butcher(mname2);
+fprintf('\nRunning with ARK integrator: %s/%s (order = %i)\n',...
+        mname1,mname2,Be(s+1,1))
+[t,Y,ns,nl] = solve_ARK(fe, fi, Ji, tout, Y0, Be, Bi, rtol, atol, hmin, hmax, hmin);
+err_max = max(max(abs(Y'-Ytrue)));
+err_rms = sqrt(sum(sum((Y'-Ytrue).^2))/numel(Y));
+fprintf('Accuracy/Work Results:\n')
+fprintf('   maxerr = %.5e,  rmserr = %.5e\n',err_max, err_rms);
+fprintf('   steps = %i (stages = %i), linear solves = %i\n',ns,ns*s,nl);
+
+
 % run with an embedded explicit RK method
 mname = 'Fehlberg-ERK';
 B = butcher(mname);  s = numel(B(1,:))-1;
@@ -107,6 +125,28 @@ fprintf('Accuracy/Work Results:\n')
 fprintf('   maxerr = %.5e,  rmserr = %.5e\n',err_max, err_rms);
 fprintf('   steps = %i (stages = %i)\n',ns,ns*s);
 
-
-
 % end of script
+
+
+
+%------------------------- Utility routines -------------------------%
+
+
+
+function dt = EStab_p2(t, y)
+
+   % compute the Jacobian ODE RHS
+   global ep;
+   J = [-(y(3)+1) + 2*y(1)*y(2),  y(1)*y(1),  -y(1);
+        y(3) - 2*y(1)*y(2),  -y(1)*y(1),  y(1);
+        -y(3),  0,  -1/ep - y(1)];
+
+   % determine the largest eigenvalue magnitude
+   lam = max(abs(eig(J)));
+
+   % assume explicit stability region includes Euler stability region
+   % (this assumes that the eigenvalue is in fact negative).
+   dt = 1/lam;
+
+   % end function
+end
