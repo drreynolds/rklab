@@ -1,5 +1,5 @@
-function [q,p,qs,lq,lp,Bs,As,Ls,BsE,AsE,LsE] = check_rk(B,tol,reportL,doPlot,box,mname,fname)
-% Usage: [q,p,qs,lq,lp,Bs,As,Ls,BsE,AsE,LsE] = check_rk(B,tol,reportL,doPlot,box,mname,fname)
+function [q,p,qs,lq,lp,Bs,As,Ls,BsE,AsE,LsE,tol] = check_rk(B,reportL,doPlot,box,mname,fname)
+% Usage: [q,p,qs,lq,lp,Bs,As,Ls,BsE,AsE,LsE,tol] = check_rk(B,reportL,doPlot,box,mname,fname)
 %
 % Checks the Butcher table B to determine:
 % * the analytical order of accuracy (up to 6th) -> q
@@ -9,6 +9,11 @@ function [q,p,qs,lq,lp,Bs,As,Ls,BsE,AsE,LsE] = check_rk(B,tol,reportL,doPlot,box
 % * estimate B-stability of the method & embedding -> Bs and BsE
 % * A-stability of the method & embedding -> As, AsE
 % * L-stability of the method & embedding -> Ls, LsE
+%
+% When determining q, p, qs, lq and lq, we first declare 'success'
+% at a very loose tolerance of 1e-8, and then tighten this until
+% any of these decrease.  The tightest tested tolerance where these
+% outputs show full order is returned as 'tol'.
 %
 % It is assumed that B has block structure
 %     B = [c, A; 0, b]
@@ -40,8 +45,6 @@ function [q,p,qs,lq,lp,Bs,As,Ls,BsE,AsE,LsE] = check_rk(B,tol,reportL,doPlot,box
 %
 % Inputs:
 %   B -- RK table
-%   tol -- tolerance for checking order conditions (use negative
-%          or zero for default value)
 %   reportL -- integer flag denoting print level:
 %              >1 -> all results
 %              =1 -> final results
@@ -62,10 +65,11 @@ function [q,p,qs,lq,lp,Bs,As,Ls,BsE,AsE,LsE] = check_rk(B,tol,reportL,doPlot,box
 % For details, see the LICENSE file.
 %------------------------------------------------------------
 
-% set tolerance on 'equality'
-if (tol <= 0)
-   tol = 1e-8;
-end
+% set tolerance for assessing stability
+StabTol = 1e-8;
+
+% set initial tolerance on method/embedding order
+tol = 1e-8;
 
 % extract components of Butcher table
 [m,n] = size(B);
@@ -94,7 +98,7 @@ end
 
 % assess order & stability of method
 [q,lq] = table_order(c,A,b,tol,reportL);
-[As,Bs,Ls] = stability(A,b,tol);
+[As,Bs,Ls] = stability(A,b,StabTol);
 
 % report on method
 if (reportL>0)
@@ -106,7 +110,7 @@ end
 % if an embedding exists, assess embedding properties
 if (embedded)
    [p,lp] = table_order(c,A,d,tol,reportL);
-   [AsE,BsE,LsE] = stability(A,d,tol);
+   [AsE,BsE,LsE] = stability(A,d,StabTol);
    if (reportL>0)
       fprintf('    embedding: p = %i,  lp = %i,  As = %i,  Bs = %i,  Ls = %i\n', ...
               p, lp, AsE, BsE, LsE);
@@ -119,6 +123,23 @@ else
    LsE = 0;
 end
 
+
+% hone in on tightest tolerance where method and embedding order
+% are retained
+for testtol = 0.1.^(8:40)
+   [q_,lq_] = table_order(c,A,b,testtol,0);
+   qs_ = stage_order(c,A,tol);
+   if ((q_ < q) || (lq_ < lq) || (qs_ < qs))
+      break
+   end
+   if (embedded)
+      [p_,lp_] = table_order(c,A,d,testtol,0);
+      if ((p_ < p) || (lp_ < lp))
+         break
+      end
+   end
+   tol = testtol;
+end
 
 
 
@@ -175,6 +196,9 @@ function [q,lq] = table_order(c,A,b,tol,reportL)
    % convert b to column vector for these tests
    b = reshape(b,s,1);
 
+   % create vector of ones
+   e = ones(s,1);
+
    % check row sum condition
    for i=1:s
       tst = c(i) - sum(A(i,:));
@@ -193,7 +217,7 @@ function [q,lq] = table_order(c,A,b,tol,reportL)
 
    % check for first order
    if (~Ofail || ~Lfail)
-      tst = sum(b)-1;
+      tst = double(b'*e - sym(1));
       if (abs(tst) > tol)
          Ofail = true;
          Lfail = true;
@@ -202,7 +226,7 @@ function [q,lq] = table_order(c,A,b,tol,reportL)
          end
       end
       if (reportL>1)
-         if (~Ofail), fprintf('  Method passes order 1 conditions\n'); end
+         if (~Ofail), fprintf('  Method passes order 1 condition\n'); end
       end
       if (~Ofail)
          q = 1;
@@ -212,7 +236,7 @@ function [q,lq] = table_order(c,A,b,tol,reportL)
 
    % check for second order
    if (~Ofail || ~Lfail)
-      tst = b'*c - 0.5;
+      tst = double(b'*c - sym(0.5));
       if (abs(tst) > tol)
          Ofail = true;
          Lfail = true;
@@ -232,7 +256,7 @@ function [q,lq] = table_order(c,A,b,tol,reportL)
    % check for third order
    if (~Ofail || ~Lfail)
 
-      tst = b'*(c.*c) - (1/3);
+      tst = double(b'*(c.*c) - sym(1)/sym(3));
       if (abs(tst) > tol)
          Ofail = true;
          if (reportL>1)
@@ -240,7 +264,7 @@ function [q,lq] = table_order(c,A,b,tol,reportL)
          end
       end
 
-      tst = b'*(A*c) - (1/6);
+      tst = double(b'*(A*c) - sym(1)/sym(6));
       if (abs(tst) > tol)
          Ofail = true;
          Lfail = true;
@@ -261,11 +285,11 @@ function [q,lq] = table_order(c,A,b,tol,reportL)
       end
    end
 
-   % check for third order
+   % check for fourth order
    if (~Ofail || ~Lfail)
 
       if (~Ofail)
-         tst = b'*(c.*c.*c) - (1/4);
+         tst = double(b'*(c.^3) - sym(1)/sym(4));
          if (abs(tst) > tol)
             Ofail = true;
             if (reportL>1)
@@ -273,7 +297,7 @@ function [q,lq] = table_order(c,A,b,tol,reportL)
             end
          end
 
-         tst = (b.*c)'*(A*c) - (1/8);
+         tst = double((b.*c)'*(A*c) - sym(1)/sym(8));
          if (abs(tst) > tol)
             Ofail = true;
             if (reportL>1)
@@ -281,7 +305,7 @@ function [q,lq] = table_order(c,A,b,tol,reportL)
             end
          end
 
-         tst = b'*A*(c.*c) - (1/12);
+         tst = double(b'*A*(c.*c) - sym(1)/sym(12));
          if (abs(tst) > tol)
             Ofail = true;
             if (reportL>1)
@@ -290,7 +314,7 @@ function [q,lq] = table_order(c,A,b,tol,reportL)
          end
       end
 
-      tst = b'*A*A*c - (1/24);
+      tst = double(b'*A*A*c - sym(1)/sym(24));
       if (abs(tst) > tol)
          Ofail = true;
          Lfail = true;
@@ -316,7 +340,7 @@ function [q,lq] = table_order(c,A,b,tol,reportL)
 
       if (~Ofail)
 
-         tst = b'*(c.*c.*c.*c) - (1/5);
+         tst = double(b'*(c.^4) - sym(1)/sym(5));
          if (abs(tst) > tol)
             Ofail = true;
             if (reportL>1)
@@ -324,7 +348,7 @@ function [q,lq] = table_order(c,A,b,tol,reportL)
             end
          end
 
-         tst = (b.*c.*c)'*(A*c) - (1/10);
+         tst = double((b.*c.*c)'*(A*c) - sym(1)/sym(10));
          if (abs(tst) > tol)
             Ofail = true;
             if (reportL>1)
@@ -332,7 +356,7 @@ function [q,lq] = table_order(c,A,b,tol,reportL)
             end
          end
 
-         tst = b'*((A*c).*(A*c)) - (1/20);
+         tst = double(b'*((A*c).^2) - sym(1)/sym(20));
          if (abs(tst) > tol)
             Ofail = true;
             if (reportL>1)
@@ -340,7 +364,7 @@ function [q,lq] = table_order(c,A,b,tol,reportL)
             end
          end
 
-         tst = (b.*c)'*A*(c.*c) - (1/15);
+         tst = double((b.*c)'*A*(c.*c) - sym(1)/sym(15));
          if (abs(tst) > tol)
             Ofail = true;
             if (reportL>1)
@@ -348,7 +372,7 @@ function [q,lq] = table_order(c,A,b,tol,reportL)
             end
          end
 
-         tst = b'*A*(c.*c.*c) - (1/20);
+         tst = double(b'*A*(c.^3) - sym(1)/sym(20));
          if (abs(tst) > tol)
             Ofail = true;
             if (reportL>1)
@@ -356,7 +380,7 @@ function [q,lq] = table_order(c,A,b,tol,reportL)
             end
          end
 
-         tst = (b.*c)'*A*A*c - (1/30);
+         tst = double((b.*c)'*A*A*c - sym(1)/sym(30));
          if (abs(tst) > tol)
             Ofail = true;
             if (reportL>1)
@@ -364,14 +388,7 @@ function [q,lq] = table_order(c,A,b,tol,reportL)
             end
          end
 
-         tst = -(1/40);
-         for i=1:s
-            for j=1:s
-               for k=1:s
-                  tst = tst + b(i)*A(i,j)*c(j)*A(j,k)*c(k);
-               end
-            end
-         end
+         tst = double(b'*A*(c.*(A*c)) - sym(1)/sym(40));
          if (abs(tst) > tol)
             Ofail = true;
             if (reportL>1)
@@ -379,7 +396,7 @@ function [q,lq] = table_order(c,A,b,tol,reportL)
             end
          end
 
-         tst = b'*A*A*(c.*c) - (1/60);
+         tst = double(b'*A*A*(c.*c) - sym(1)/sym(60));
          if (abs(tst) > tol)
             Ofail = true;
             if (reportL>1)
@@ -389,7 +406,7 @@ function [q,lq] = table_order(c,A,b,tol,reportL)
 
       end
 
-      tst = b'*A*A*A*c - (1/120);
+      tst = double(b'*A*A*A*c - sym(1)/sym(120));
       if (abs(tst) > tol)
          Ofail = true;
          Lfail = true;
@@ -410,18 +427,180 @@ function [q,lq] = table_order(c,A,b,tol,reportL)
       end
    end
 
-   % check for linear sixth order
-   if (~Lfail)
-      tst = b'*A*A*A*A*c - (1/factorial(6));
+   % check for sixth order
+   if (~Ofail || ~Lfail)
+
+      if (~Ofail)
+
+         tst = double(b'*(c.^5) - sym(1)/sym(6));
+         if (abs(tst) > tol)
+            Ofail = true;
+            if (reportL>1)
+               fprintf('    Method fails 6th order condition A (tst = %g)\n', tst);
+            end
+         end
+
+         tst = double((b.*c.^3)'*(A*c) - sym(1)/sym(12));
+         if (abs(tst) > tol)
+            Ofail = true;
+            if (reportL>1)
+               fprintf('    Method fails 6th order condition B (tst = %g)\n', tst);
+            end
+         end
+
+         tst = double(b'*(c.*(A*c).^2) - sym(1)/sym(24));
+         if (abs(tst) > tol)
+            Ofail = true;
+            if (reportL>1)
+               fprintf('    Method fails 6th order condition C (tst = %g)\n', tst);
+            end
+         end
+
+         tst = double((b.*(c.*c))'*A*(c.*c) - sym(1)/sym(18));
+         if (abs(tst) > tol)
+            Ofail = true;
+            if (reportL>1)
+               fprintf('    Method fails 6th order condition D (tst = %g)\n', tst);
+            end
+         end
+
+         tst = double((b.*(c.*c))'*A*A*c - sym(1)/sym(36));
+         if (abs(tst) > tol)
+            Ofail = true;
+            if (reportL>1)
+               fprintf('    Method fails 6th order condition E (tst = %g)\n', tst);
+            end
+         end
+
+         tst = double((b.*c.*c)'*A*A*c - sym(1)/sym(36));
+         if (abs(tst) > tol)
+            Ofail = true;
+            if (reportL>1)
+               fprintf('    Method fails 6th order condition F (tst = %g)\n', tst);
+            end
+         end
+
+         tst = double(b'*((A*A*c).*(A*c)) - sym(1)/sym(72));
+         if (abs(tst) > tol)
+            Ofail = true;
+            if (reportL>1)
+               fprintf('    Method fails 6th order condition G (tst = %g)\n', tst);
+            end
+         end
+
+         tst = double(b'*(c.*(A*(c.^3))) - sym(1)/sym(24));
+         if (abs(tst) > tol)
+            Ofail = true;
+            if (reportL>1)
+               fprintf('    Method fails 6th order condition H (tst = %g)\n', tst);
+            end
+         end
+
+         tst = double(b'*(c.*(A*(c.*(A*c)))) - sym(1)/sym(48));
+         if (abs(tst) > tol)
+            Ofail = true;
+            if (reportL>1)
+               fprintf('    Method fails 6th order condition I (tst = %g)\n', tst);
+            end
+         end
+
+         tst = double( b'*(c.*(A*A*(c.*c))) - sym(1)/sym(72));
+         if (abs(tst) > tol)
+            Ofail = true;
+            if (reportL>1)
+               fprintf('    Method fails 6th order condition J (tst = %g)\n', tst);
+            end
+         end
+
+         tst = double( b'*(c.*(A*A*A*c)) - sym(1)/sym(144));
+         if (abs(tst) > tol)
+            Ofail = true;
+            if (reportL>1)
+               fprintf('    Method fails 6th order condition K (tst = %g)\n', tst);
+            end
+         end
+
+         tst = double( b'*A*(c.^4) - sym(1)/sym(30));
+         if (abs(tst) > tol)
+            Ofail = true;
+            if (reportL>1)
+               fprintf('    Method fails 6th order condition K (tst = %g)\n', tst);
+            end
+         end
+
+         tst = double( b'*A*(c.*c.*(A*c)) - sym(1)/sym(60));
+         if (abs(tst) > tol)
+            Ofail = true;
+            if (reportL>1)
+               fprintf('    Method fails 6th order condition L (tst = %g)\n', tst);
+            end
+         end
+
+         tst = double( b'*A*((A*c).^2) - sym(1)/sym(120));
+         if (abs(tst) > tol)
+            Ofail = true;
+            if (reportL>1)
+               fprintf('    Method fails 6th order condition M (tst = %g)\n', tst);
+            end
+         end
+
+         tst = double( b'*A*(c.*(A*(c.*c))) - sym(1)/sym(90));
+         if (abs(tst) > tol)
+            Ofail = true;
+            if (reportL>1)
+               fprintf('    Method fails 6th order condition N (tst = %g)\n', tst);
+            end
+         end
+
+         tst = double( b'*A*(c.*(A*A*c)) - sym(1)/sym(180));
+         if (abs(tst) > tol)
+            Ofail = true;
+            if (reportL>1)
+               fprintf('    Method fails 6th order condition O (tst = %g)\n', tst);
+            end
+         end
+
+         tst = double( b'*A*A*(c.^3) - sym(1)/sym(120));
+         if (abs(tst) > tol)
+            Ofail = true;
+            if (reportL>1)
+               fprintf('    Method fails 6th order condition P (tst = %g)\n', tst);
+            end
+         end
+
+         tst = double( b'*A*A*(c.*(A*c)) - sym(1)/sym(240));
+         if (abs(tst) > tol)
+            Ofail = true;
+            if (reportL>1)
+               fprintf('    Method fails 6th order condition Q (tst = %g)\n', tst);
+            end
+         end
+
+         tst = double( b'*A*A*A*(c.*c) - sym(1)/sym(360));
+         if (abs(tst) > tol)
+            Ofail = true;
+            if (reportL>1)
+               fprintf('    Method fails 6th order condition R (tst = %g)\n', tst);
+            end
+         end
+
+      end
+
+      tst = double(b'*A*A*A*A*c - sym(1)/sym(720));
       if (abs(tst) > tol)
+         Ofail = true;
          Lfail = true;
          if (reportL>1)
-            fprintf('    Method fails linear 6th order condition (tst = %g)\n', tst);
+            fprintf('    Method fails linear 6th order condition S (tst = %g)\n', tst);
          end
       end
 
       if (reportL>1)
-         if (~Lfail),  fprintf('  Method passes linear order 6 condition\n'); end
+         if (~Ofail),  fprintf('  Method passes order 6 conditions\n'); end
+         if (~Lfail && Ofail),  fprintf('  Method passes linear order 6 condition\n'); end
+      end
+      if (~Ofail)
+         q = 6;
       end
       if (~Lfail)
          lq = 6;
@@ -430,7 +609,7 @@ function [q,lq] = table_order(c,A,b,tol,reportL)
 
    % check for linear seventh order
    if (~Lfail)
-      tst = b'*A*A*A*A*A*c - (1/factorial(7));
+      tst = double(b'*A*A*A*A*A*c - sym(1)/sym(factorial(7)));
       if (abs(tst) > tol)
          Lfail = true;
          if (reportL>1)
@@ -448,7 +627,7 @@ function [q,lq] = table_order(c,A,b,tol,reportL)
 
    % check for linear eighth order
    if (~Lfail)
-      tst = b'*A*A*A*A*A*A*c - (1/factorial(8));
+      tst = double(b'*A*A*A*A*A*A*c - sym(1)/sym(factorial(8)));
       if (abs(tst) > tol)
          Lfail = true;
          if (reportL>1)
@@ -465,8 +644,8 @@ function [q,lq] = table_order(c,A,b,tol,reportL)
    end
 
 
-   %--- if the method seems to have order 5, continue with Butcher's simplifying assumptions ---%
-   if (q == 5)
+   %--- if the method seems to have order 6, continue with Butcher's simplifying assumptions ---%
+   if (q == 6)
 
       if (reportL>1)
          fprintf('  Using Butcher''s simplifying assumptions to continue tests\n')
@@ -477,8 +656,9 @@ function [q,lq] = table_order(c,A,b,tol,reportL)
       P = 0;
       for i=1:1000
          LHS = b'*(c.^(i-1));
-         RHS = 1/i;
-         if (abs(RHS-LHS)>tol)
+         RHS = sym(1)/(i);
+         tst = double(RHS-LHS);
+         if (abs(tst)>tol)
             break;
          end
          P = P+1;
@@ -490,8 +670,9 @@ function [q,lq] = table_order(c,A,b,tol,reportL)
          alltrue = 1;
          for i=1:s
             LHS = A(i,:)*(c.^(k-1));
-            RHS = c(i)^k/k;
-            if (abs(RHS-LHS)>tol)
+            RHS = sym(c(i)^k)/sym(k);
+            tst = double(RHS-LHS);
+            if (abs(tst)>tol)
                alltrue=0;
                break;
             end
@@ -512,8 +693,9 @@ function [q,lq] = table_order(c,A,b,tol,reportL)
             for i=1:s
                LHS = LHS + A(i,j)*b(i)*c(i)^(k-1);
             end
-            RHS = b(j)/k*(1-c(j)^k);
-            if (abs(RHS-LHS)>tol)
+            RHS = b(j)/sym(k)*(sym(1)-c(j)^k);
+            tst = double(RHS-LHS);
+            if (abs(tst)>tol)
                alltrue = 0;
                break;
             end
@@ -575,8 +757,9 @@ function [qs] = stage_order(c,A,tol)
       alltrue = 1;
       for i=1:s
          LHS = A(i,:)*(c.^(k-1));
-         RHS = c(i)^k/k;
-         if (abs(RHS-LHS)>tol)
+         RHS = c(i)^k/sym(k);
+         tst = double(RHS-LHS);
+         if (abs(tst)>tol)
             alltrue=0;
             break;
          end

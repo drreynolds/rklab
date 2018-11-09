@@ -27,7 +27,8 @@ function B = butcher(method_name,symbolic)
 % (ERK, DIRK, IRK) and subcategory (non-embedded vs embedded).
 % Each method lists:
 % - the number of stages (s)
-% - the order of accuracy of the stages (qs)
+% - the order of accuracy of the stages (qs)  (implicit methods
+%   only, since explicit method stage accuracy is limited to 1)
 % - the order of accuracy of the method (q)
 % - the linear order of the method (lq) -- i.e. the order of
 %   accuracy when the IVP RHS f(t,y) depends linearly on y
@@ -39,148 +40,169 @@ function B = butcher(method_name,symbolic)
 % - the embedding linear order of accuracy (lp)
 % - A,B,L-stability of the embedding (implicit methods only)
 %
+% For each method, the reported values of {q,p,qs,lq,lp} correspond
+% to satisfaction of the order conditions for a loose tolerance of
+% 1e-8.  For each method, we additionally report the tightest
+% tolerance where these order conditions are still satisfied (to a
+% minimum of 1e-40).
+%
 % Note: all method properties listed are automatically computed
-% using the accompanying check_rk() function with a relatively
-% loose tolerance of 1e-9.  However, it is possible that a method
-% has higher order of accuracy than reported by that routine; hence
-% the values of q and p in this table may differ from the
-% self-reported orders of accuracy contained within each table.
+% using the accompanying check_rk() function using symbolic
+% variables to eliminate floating-point calculation error.  This
+% routine tests the full analytical order conditions up to 6;
+% thereafter it merely checks Butcher's simplifying assumptions to
+% assess higher orders of accuracy.  
 %
-% Explicit, no embedding:
+% Since Butcher's simplifying assumptions correspond to sufficient
+% (but not necessary) conditions for order of accuracy, we may
+% report an accuracy of 6 when in fact the method has higher
+% order. Methods where we report 6 but have higher published order
+% are marked with "+".
+% 
+% However, since we analytically assess the *necessary* order
+% conditions up to 6, any method with published accuracy <= 6 that
+% does NOT attain this published order is marked with "-".
 %
-%              Name             |  s  qs  |  q  lq
-%  -------------------------------------------------
-%                      ERK-1-1  |  1   1  |  1   1
-%                      ERK-2-2  |  2   1  |  2   2
-%              SSP2(2,2,2)-ERK  |  2   1  |  2   2
-%            Ascher(2,3,3)-ERK  |  3   1  |  3   3
-%              Knoth-Wolke-ERK  |  3   1  |  3   3
-%              SSP3(3,3,2)-ERK  |  3   1  |  3   3
-%              SSP3(3,3,3)-ERK  |  3   1  |  3   3
-%     SSPRK(3,3)-Shu-Osher-ERK  |  3   1  |  3   3
-%            Ascher(2,3,2)-ERK  |  3   1  |  2   3
-%               ARK(2,3,2)-ERK  |  3   1  |  2   3
-%            Ascher(2,2,2)-ERK  |  3   1  |  2   2
-%         SSP2(3,3,2)-lpm1-ERK  |  3   1  |  2   2
-%         SSP2(3,3,2)-lpm2-ERK  |  3   1  |  2   2
-%         SSP2(3,3,2)-lpum-ERK  |  3   1  |  2   2
-%        SSP2(3,3,2)-lspum-ERK  |  3   1  |  2   2
-%            SSP2(3,3,2)-a-ERK  |  3   1  |  2   2
-%            SSP2(3,3,2)-b-ERK  |  3   1  |  2   2
-%                 3/8-Rule-ERK  |  4   1  |  4   4
-%                      ERK-4-4  |  4   1  |  4   4
-%            Ascher(3,4,3)-ERK  |  4   1  |  3   4
-%              SSP3(4,3,3)-ERK  |  4   1  |  3   3
-%                  Cooper4-ERK  |  4   1  |  3   3
-%            Ascher(4,4,3)-ERK  |  5   1  |  3   3
-%                  DBM-5-3-ERK  |  5   1  |  3   3
-%                  Cooper6-ERK  |  6   1  |  4   4
-%
-%
-% Explicit, with embedding:
-%
-%                               |         |  Method  |  Embedding
-%              Name             |  s  qs  |  q  lq   |  p  lp
-%  -----------------------------------------------------------------
-%               Heun-Euler-ERK  |  2   1  |  2   2   |  1   1
-%                      ERK-3-3  |  3   1  |  3   3   |  2   2
-%           ARK3(2)4L[2]SA-ERK  |  4   1  |  3   3   |  2   2
-%         Bogacki-Shampine-ERK  |  4   1  |  3   3   |  2   2
-%               Merson-4-3-ERK  |  5   1  |  4   4   |  3   5
-%            Zonneveld-4-3-ERK  |  5   1  |  4   4   |  3   3
-%                Cash-Karp-ERK  |  6   1  |  5   5   |  4   4
-%                 Fehlberg-ERK  |  6   1  |  4   4   |  5   5
-%           ARK4(3)6L[2]SA-ERK  |  6   1  |  4   4   |  3   3
-%         Sayfy-Aburub-4-3-ERK  |  6   1  |  4   4   |  3   3
-%           Dormand-Prince-ERK  |  7   1  |  5   5   |  4   4
-%           ARK4(3)7L[2]SA-ERK  |  7   1  |  4   4   |  3   3
-%               Verner-6-5-ERK  |  8   1  |  5   6   |  5   5
-%           ARK5(4)8L[2]SA-ERK  |  8   1  |  5   5   |  4   4
-%          ARK5(4)8L[2]SAb-ERK  |  8   1  |  5   5   |  4   4
-%             Fehlberg-8-7-ERK  | 13   1  |  5   8   |  5   7
+% Explicit, non-embedded methods:
+% 
+%             Name             |  s |  q  lq  |  tol
+%   --------------------------------------------------
+%                 DBM-5-3-ERK  |  5 |  3   3  | 1e-15
+%           Ascher(2,3,3)-ERK  |  3 |  3   3  | 1e-40
+%           Ascher(2,3,2)-ERK  |  3 |  2   3  | 1e-40
+%           Ascher(2,2,2)-ERK  |  3 |  2   2  | 1e-40
+%           Ascher(3,4,3)-ERK  |  4 |  3   4  | 1e-17
+%           Ascher(4,4,3)-ERK  |  5 |  3   3  | 1e-40
+%             Knoth-Wolke-ERK  |  3 |  3   3  | 1e-40
+%                3/8-Rule-ERK  |  4 |  4   4  | 1e-40
+%                 Cooper4-ERK  |  4 |  3   3  | 1e-40
+%                 Cooper6-ERK  |  6 |  4-  4  | 1e-40
+%                     ERK-1-1  |  1 |  1   1  | 1e-40
+%                     ERK-2-2  |  2 |  2   2  | 1e-40
+%                     ERK-4-4  |  4 |  4   4  | 1e-40
+%             Butcher-7-6-ERK  |  7 |  6   6  | 1e-40
+%            Butcher-7-6b-ERK  |  7 |  6   6  | 1e-40
+%             Butcher-9-7-ERK  |  9 |  6+  7  | 1e-40
+%       CooperVerner-11-8-ERK  | 11 |  6+  8  | 1e-14
+%              ARK(2,3,2)-ERK  |  3 |  2   3  | 1e-40
+%             SSP2(2,2,2)-ERK  |  2 |  2   2  | 1e-40
+%        SSP2(3,3,2)-lpm1-ERK  |  3 |  2   2  | 1e-40
+%        SSP2(3,3,2)-lpm2-ERK  |  3 |  2   2  | 1e-40
+%        SSP2(3,3,2)-lpum-ERK  |  3 |  2   2  | 1e-40
+%       SSP2(3,3,2)-lspum-ERK  |  3 |  2   2  | 1e-40
+%           SSP2(3,3,2)-a-ERK  |  3 |  2   2  | 1e-40
+%           SSP2(3,3,2)-b-ERK  |  3 |  2   2  | 1e-40
+%             SSP3(3,3,2)-ERK  |  3 |  3   3  | 1e-40
+%             SSP3(3,3,3)-ERK  |  3 |  3   3  | 1e-40
+%             SSP3(4,3,3)-ERK  |  4 |  3   3  | 1e-40
+%    SSPRK(3,3)-Shu-Osher-ERK  |  3 |  3   3  | 1e-40
 %
 %
-% Diagonally-implicit, no embedding:
+% Explicit, embedded methods:
+% 
+%                              |    |  Method |  Embedding  |
+%             Name             |  s |  q  lq  |  p  lp      | tol
+%   -----------------------------------------------------------------
+%          ARK3(2)4L[2]SA-ERK  |  4 |  3   3  |  2   2       | 1e-25
+%          ARK4(3)6L[2]SA-ERK  |  6 |  4   4  |  3   3       | 1e-25
+%          ARK4(3)7L[2]SA-ERK  |  7 |  4   4  |  3   3       | 1e-25
+%          ARK5(4)8L[2]SA-ERK  |  8 |  5   5  |  4   4       | 1e-25
+%         ARK5(4)8L[2]SAb-ERK  |  8 |  5   5  |  4   4       | 1e-25
+%        Sayfy-Aburub-4-3-ERK  |  6 |  4   4  |  3   3       | 1e-40
+%              Heun-Euler-ERK  |  2 |  2   2  |  1   1       | 1e-40
+%        Bogacki-Shampine-ERK  |  4 |  3   3  |  2   2       | 1e-40
+%                Fehlberg-ERK  |  6 |  4   4  |  5   5       | 1e-40
+%               Cash-Karp-ERK  |  6 |  5   5  |  4   4       | 1e-40
+%          Dormand-Prince-ERK  |  7 |  5   5  |  4   4       | 1e-40
+%                     ERK-3-3  |  3 |  3   3  |  2   2       | 1e-40
+%              Merson-4-3-ERK  |  5 |  4   4  |  3   5       | 1e-40
+%           Zonneveld-4-3-ERK  |  5 |  4   4  |  3   3       | 1e-40
+%              Verner-6-5-ERK  |  8 |  6   6  |  5   5       | 1e-40
+%            Fehlberg-8-7-ERK  | 13 |  6+  8  |  6+  7       | 1e-40
+% 
 %
-%              Name             |  s  qs  |  q  lq   A   B   L
-%  -------------------------------------------------------------
-%            SSP2(2,2,2)-SDIRK  |  2   1  |  2   2   Y   Y
-%                    SDIRK-2-2  |  2   1  |  2   2   Y       Y
-%             ARK(2,3,2)-SDIRK  |  3   2  |  2   2   Y       Y
-%          Ascher(2,3,3)-SDIRK  |  3   1  |  3   3   Y   Y
-%                    EDIRK-3-3  |  3   1  |  3   3   Y
-%                   ESDIRK-3-3  |  3   1  |  3   3   Y
-%           SSP3(3,3,3)-ESDIRK  |  3   1  |  3   3
-%       SSP2(3,3,2)-lpm1-SDIRK  |  3   1  |  2   2   Y
-%       SSP2(3,3,2)-lpm2-SDIRK  |  3   1  |  2   2   Y       Y
-%       SSP2(3,3,2)-lpum-SDIRK  |  3   1  |  2   2   Y       Y
-%      SSP2(3,3,2)-lspum-SDIRK  |  3   1  |  2   2   Y       Y
-%           SSP2(3,3,2)-a-DIRK  |  3   1  |  2   2   Y       Y
-%           SSP2(3,3,2)-b-DIRK  |  3   1  |  2   2   Y       Y
-%            SSP3(3,3,2)-SDIRK  |  3   1  |  2   2   Y
-%          Ascher(2,3,2)-SDIRK  |  3   1  |  2   2   Y       Y
-%          Ascher(2,2,2)-SDIRK  |  3   1  |  2   2   Y       Y
-%          Ascher(3,4,3)-SDIRK  |  4   1  |  3   3   Y       Y
-%          Ascher(4,4,3)-SDIRK  |  4   1  |  3   3   Y       Y
-%               Cooper4-ESDIRK  |  4   1  |  3   3   Y
-%            SSP3(4,3,3)-SDIRK  |  4   1  |  3   3   Y
-%               DBM-5-3-ESDIRK  |  5   1  |  3   3   Y
-%               Cooper6-ESDIRK  |  6   1  |  4   4   Y
+% Diagonally-implicit, non-embedded methods:
+% 
+%             Name             |  s |  q  lq   A   B   L  |  qs  tol
+%   ------------------------------------------------------------------
+%              DBM-5-3-ESDIRK  |  5 |  3   3   Y       Y  |  1  1e-16
+%         Ascher(2,3,3)-SDIRK  |  3 |  3   3   Y   Y      |  1  1e-40
+%         Ascher(2,3,2)-SDIRK  |  3 |  2   2   Y       Y  |  1  1e-40
+%         Ascher(2,2,2)-SDIRK  |  3 |  2   2   Y       Y  |  1  1e-40
+%         Ascher(3,4,3)-SDIRK  |  4 |  3   3   Y       Y  |  1  1e-17
+%         Ascher(4,4,3)-SDIRK  |  4 |  3   3   Y       Y  |  1  1e-40
+%              Cooper4-ESDIRK  |  4 |  3   3   Y          |  1  1e-40
+%              Cooper6-ESDIRK  |  6 |  4-  4   Y          |  1  1e-40
+%                   SDIRK-2-2  |  2 |  2   2   Y       Y  |  1  1e-40
+%            ARK(2,3,2)-SDIRK  |  3 |  2   2   Y       Y  |  2  1e-40
+%           SSP2(2,2,2)-SDIRK  |  2 |  2   2   Y   Y   Y  |  1  1e-40
+%      SSP2(3,3,2)-lpm1-SDIRK  |  3 |  2   2   Y       Y  |  1  1e-40
+%      SSP2(3,3,2)-lpm2-SDIRK  |  3 |  2   2   Y       Y  |  1  1e-40
+%      SSP2(3,3,2)-lpum-SDIRK  |  3 |  2   2   Y       Y  |  1  1e-40
+%     SSP2(3,3,2)-lspum-SDIRK  |  3 |  2   2   Y       Y  |  1  1e-40
+%          SSP2(3,3,2)-a-DIRK  |  3 |  2   2   Y       Y  |  1  1e-40
+%          SSP2(3,3,2)-b-DIRK  |  3 |  2   2   Y       Y  |  1  1e-40
+%           SSP3(3,3,2)-SDIRK  |  3 |  2   2   Y       Y  |  1  1e-40
+%          SSP3(3,3,3)-ESDIRK  |  3 |  3   3              |  1  1e-40
+%           SSP3(4,3,3)-SDIRK  |  4 |  3   3   Y          |  1  1e-14
+%                   EDIRK-3-3  |  3 |  3   3   Y          |  1  1e-40
+%                  ESDIRK-3-3  |  3 |  3   3   Y          |  1  1e-40
 %
 %
-% Diagonally-implicit, with embedding:
+% Diagonally-implicit, embedded methods:
+% 
+%                              |    |       Method        |      Embedding      |
+%             Name             |  s |  q  lq   A   B   L  |  p  lp   A   B   L  |  qs  tol
+%   ----------------------------------------------------------------------------------------
+%       ARK3(2)4L[2]SA-ESDIRK  |  4 |  3   3   Y       Y  |  2   2   Y          |  2  1e-25
+%       ARK4(3)6L[2]SA-ESDIRK  |  6 |  4   4   Y       Y  |  3   3   Y          |  2  1e-40
+%       ARK4(3)7L[2]SA-ESDIRK  |  7 |  4   4   Y       Y  |  3   3   Y       Y  |  2  1e-25
+%       ARK5(4)8L[2]SA-ESDIRK  |  8 |  5   5   Y       Y  |  4   4   Y          |  2  1e-25
+%      ARK5(4)8L[2]SAb-ESDIRK  |  8 |  5   5   Y       Y  |  4   4   Y          |  2  1e-25
+%               TRBDF2-ESDIRK  |  3 |  2   2   Y       Y  |  3   3              |  2  1e-40
+%                 TRX2-ESDIRK  |  3 |  2   2   Y          |  3   3              |  2  1e-40
+%            Billington-SDIRK  |  3 |  2   2   Y          |  3   3              |  1  1e-11
+%           Cash(5,2,4)-SDIRK  |  5 |  4   4   Y       Y  |  2   2   Y          |  1  1e-10
+%           Cash(5,3,4)-SDIRK  |  5 |  4   4   Y       Y  |  3   3   Y          |  1  1e-10
+%       Kvaerno(4,2,3)-ESDIRK  |  4 |  3   3   Y          |  2   2   Y          |  2  1e-14
+%       Kvaerno(5,3,4)-ESDIRK  |  5 |  4   4   Y          |  3   3   Y          |  2  1e-14
+%       Kvaerno(7,4,5)-ESDIRK  |  7 |  5   5   Y       Y  |  4   4   Y          |  2  1e-15
+%                   SDIRK-2-1  |  2 |  2   2   Y   Y      |  1   1   Y   Y   Y  |  1  1e-40
+%                   SDIRK-5-4  |  5 |  4   4   Y       Y  |  3   3           Y  |  1  1e-40
 %
-%                               |         |       Method        |     Embedding
-%              Name             |  s  qs  |  q  lq   A   B   L  |  p  lp   A   B   L
-%  -----------------------------------------------------------------------------------
-%                    SDIRK-2-1  |  2   1  |  2   2   Y   Y      |  1   1   Y   Y   Y
-%                TRBDF2-ESDIRK  |  3   2  |  2   2   Y       Y  |  3   3
-%                  TRX2-ESDIRK  |  3   2  |  2   2   Y          |  3   3
-%             Billington-SDIRK  |  3   1  |  2   2   Y          |  3   3
-%        ARK3(2)4L[2]SA-ESDIRK  |  4   2  |  3   3   Y          |  2   2   Y
-%        Kvaerno(4,2,3)-ESDIRK  |  4   2  |  3   3   Y          |  2   2   Y
-%        Kvaerno(5,3,4)-ESDIRK  |  5   2  |  4   4   Y          |  3   3   Y
-%                    SDIRK-5-4  |  5   1  |  4   4   Y       Y  |  3   3           Y
-%            Cash(5,3,4)-SDIRK  |  5   1  |  4   4   Y       Y  |  3   3   Y
-%            Cash(5,2,4)-SDIRK  |  5   1  |  4   4   Y       Y  |  2   2   Y
-%        ARK4(3)6L[2]SA-ESDIRK  |  6   2  |  4   4   Y       Y  |  3   3   Y
-%        Kvaerno(7,4,5)-ESDIRK  |  7   2  |  5   5   Y       Y  |  4   4   Y
-%        ARK4(3)7L[2]SA-ESDIRK  |  7   2  |  4   4   Y       Y  |  3   3   Y       Y
-%        ARK5(4)8L[2]SA-ESDIRK  |  8   2  |  5   5   Y       Y  |  4   4   Y
-%       ARK5(4)8L[2]SAb-ESDIRK  |  8   2  |  5   5   Y       Y  |  4   4   Y
 %
-%
-% Fully implicit, no embedding:
-%
-%              Name             |  s  qs  |  q  lq   A   B   L
-%  -------------------------------------------------------------
-%                      IRK-1-1  |  1   1  |  1   1   Y   Y   Y
-%                Gauss-2-4-IRK  |  2   2  |  4   4   Y   Y
-%             RadauIIA-2-3-IRK  |  2   2  |  3   3   Y   Y   Y
-%          LobattoIIIC-2-2-IRK  |  2   1  |  2   2   Y   Y   Y
-%                     SIRK-2-2  |  2   2  |  2   2   Y       Y
-%       Crank-Nicolson-2-2-IRK  |  2   2  |  2   2   Y
-%          LobattoIIIA-2-2-IRK  |  2   2  |  2   2   Y
-%           LobattoIII-2-2-IRK  |  2   1  |  2   2
-%                Gauss-3-6-IRK  |  3   3  |  6   6   Y   Y
-%              RadauIA-3-5-IRK  |  3   2  |  5   5   Y   Y   Y
-%             RadauIIA-3-5-IRK  |  3   3  |  5   5   Y   Y   Y
-%               RadauI-3-5-IRK  |  3   3  |  5   5
-%              RadauII-3-5-IRK  |  3   2  |  5   5
-%          LobattoIIIC-3-4-IRK  |  3   2  |  4   4   Y   Y   Y
-%          LobattoIIIA-3-4-IRK  |  3   3  |  4   4   Y
-%          LobattoIIIB-3-4-IRK  |  3   1  |  4   4   Y
-%           LobattoIII-3-4-IRK  |  3   2  |  4   4
-%          LobattoIIIC-4-6-IRK  |  4   3  |  6   6   Y   Y   Y
-%          LobattoIIIA-4-6-IRK  |  4   4  |  6   6   Y
-%          LobattoIIIB-4-6-IRK  |  4   2  |  6   6   Y
-%           LobattoIII-4-6-IRK  |  4   3  |  6   6
-%             RadauIIA-5-9-IRK  |  5   5  |  9   8   Y   Y   Y
-%          LobattoIIIC-5-8-IRK  |  5   4  |  8   8   Y   Y   Y
-%          LobattoIIIA-5-8-IRK  |  5   5  |  8   8   Y
-%          LobattoIIIB-5-8-IRK  |  5   3  |  8   8   Y
-%           LobattoIII-5-8-IRK  |  5   4  |  8   8
-%               Gauss-6-12-IRK  |  6   6  | 12   8   Y   Y
+% Fully-implicit, non-embedded methods:
+% 
+%             Name             |  s |  q  lq   A   B   L  |  qs  tol
+%   --------------------------------------------------------------------
+%                     IRK-1-1  |  1 |  1   1   Y   Y   Y  |  1  1e-40
+%      Crank-Nicolson-2-2-IRK  |  2 |  2   2   Y          |  2  1e-40
+%                    SIRK-2-2  |  2 |  2   2   Y       Y  |  2  1e-40
+%               Gauss-2-4-IRK  |  2 |  4   4   Y   Y      |  2  1e-40
+%            RadauIIA-2-3-IRK  |  2 |  3   3   Y   Y   Y  |  2  1e-40
+%          LobattoIII-2-2-IRK  |  2 |  2   2              |  1  1e-40
+%         LobattoIIIA-2-2-IRK  |  2 |  2   2   Y          |  2  1e-40
+%         LobattoIIIC-2-2-IRK  |  2 |  2   2   Y   Y   Y  |  1  1e-40
+%               Gauss-3-6-IRK  |  3 |  6   6   Y   Y      |  3  1e-40
+%              RadauI-3-5-IRK  |  3 |  5   5              |  3  1e-40
+%             RadauIA-3-5-IRK  |  3 |  5   5   Y   Y   Y  |  2  1e-40
+%             RadauII-3-5-IRK  |  3 |  5   5              |  2  1e-40
+%            RadauIIA-3-5-IRK  |  3 |  5   5   Y   Y   Y  |  3  1e-40
+%          LobattoIII-3-4-IRK  |  3 |  4   4              |  2  1e-40
+%         LobattoIIIA-3-4-IRK  |  3 |  4   4   Y          |  3  1e-40
+%         LobattoIIIB-3-4-IRK  |  3 |  4   4   Y          |  1  1e-40
+%         LobattoIIIC-3-4-IRK  |  3 |  4   4   Y   Y   Y  |  2  1e-40
+%          LobattoIII-4-6-IRK  |  4 |  6   6              |  3  1e-40
+%         LobattoIIIA-4-6-IRK  |  4 |  6   6   Y          |  4  1e-40
+%         LobattoIIIB-4-6-IRK  |  4 |  6   6   Y          |  2  1e-40
+%         LobattoIIIC-4-6-IRK  |  4 |  6   6   Y   Y   Y  |  3  1e-40
+%            RadauIIA-5-9-IRK  |  5 |  9   8   Y   Y   Y  |  5  1e-15
+%          LobattoIII-5-8-IRK  |  5 |  8   8              |  4  1e-40
+%         LobattoIIIA-5-8-IRK  |  5 |  8   8   Y          |  5  1e-40
+%         LobattoIIIB-5-8-IRK  |  5 |  8   8   Y          |  3  1e-40
+%         LobattoIIIC-5-8-IRK  |  5 |  8   8   Y   Y   Y  |  4  1e-40
+%              Gauss-6-12-IRK  |  6 | 12   8   Y   Y      |  6  1e-16
+%   
 %
 %------------------------------------------------------------
 % Programmer(s):  Daniel R. Reynolds @ SMU
@@ -696,7 +718,7 @@ elseif (strcmp(method_name,'Cooper6-ESDIRK'))
         v(1)/v(4), beta/v(2), (v(1)-v(6)*beta)/v(4), beta, z, z;
         z, v(-2)*beta, (v(1)-v(6)*beta-v(8)*beta^2)/(v(1)-v(4)*beta), v(4)*beta/(v(1)-v(4)*beta), z, z;
         v(1)/v(6), z, z, v(2)/v(3), v(1)/v(6), z];
-   q = 5;
+   q = 5
    B = [c, A; q, b];
 
 elseif (strcmp(method_name,'Heun-Euler-ERK'))
@@ -731,7 +753,7 @@ elseif (strcmp(method_name,'Fehlberg-ERK'))
    b2 = [ v(16)/v(135), z, v(6656)/v(12825), v(28561)/v(56430), v(-9)/v(50), v(2)/v(55)];
    c = [ z; v(1)/v(4); v(3)/v(8); v(12)/v(13); v(1); v(1)/v(2)];
    q = 4;
-   p = 3;
+   p = 5;
    B = [c, A; q, b; p, b2];
 
 elseif (strcmp(method_name,'Cash-Karp-ERK'))
@@ -745,8 +767,8 @@ elseif (strcmp(method_name,'Cash-Karp-ERK'))
    b = [ v(37)/v(378), z, v(250)/v(621), v(125)/v(594), z, v(512)/v(1771)];
    b2 = [ v(2825)/v(27648), z, v(18575)/v(48384), v(13525)/v(55296), v(277)/v(14336), v(1)/v(4)];
    c = [ z; v(1)/v(5); v(3)/v(10); v(3)/v(5); v(1); v(7)/v(8)];
-   q = 3;
-   p = 3;
+   q = 5;
+   p = 4;
    B = [c, A; q, b; p, b2];
 
 elseif (strcmp(method_name,'Dormand-Prince-ERK'))
@@ -761,8 +783,8 @@ elseif (strcmp(method_name,'Dormand-Prince-ERK'))
    b = [ v(35)/v(384), z, v(500)/v(1113), v(125)/v(192), v(-2187)/v(6784), v(11)/v(84), z];
    b2 = [v(5179)/v(57600), z, v(7571)/v(16695), v(393)/v(640), v(-92097)/v(339200), v(187)/v(2100), v(1)/v(40)];
    c = [ z; v(1)/v(5); v(3)/v(10); v(4)/v(5); v(8)/v(9); v(1); v(1)];
-   q = 4;
-   p = 3;
+   q = 5;
+   p = 4;
    B = [c, A; q, b; p, b2];
 
 elseif (strcmp(method_name,'TRBDF2-ESDIRK'))
@@ -908,6 +930,69 @@ elseif (strcmp(method_name,'ERK-4-4'))
    b = [v(1)/v(6), v(1)/v(3), v(1)/v(3), v(1)/v(6)];
    c = [z; v(1)/v(2); v(1)/v(2); v(1)];
    q = 4;
+   B = [c, A; q, b];
+
+elseif (strcmp(method_name,'Butcher-7-6-ERK'))
+
+   A = [z, z, z, z, z, z, z;
+       v(1)/v(3), z, z, z, z, z, z;
+       z, v(2)/v(3), z, z, z, z, z;
+       v(1)/v(12), v(1)/v(3), -v(1)/v(12), z, z, z, z;
+       v(25)/v(48), -v(55)/v(24), v(35)/v(48), v(15)/v(8), z, z, z;
+       v(3)/v(20), -v(11)/v(24), -v(1)/v(8), v(1)/v(2), v(1)/v(10), z, z;
+       -v(261)/v(260), v(33)/v(13), v(43)/v(156), -v(118)/v(39), v(32)/v(195), v(80)/v(39), z];
+   b = [v(13)/v(200), z, v(11)/v(40), v(11)/v(40), v(4)/v(25), v(4)/v(25), v(13)/v(200)];
+   c = [z; v(1)/v(3); v(2)/v(3); v(1)/v(3); v(5)/v(6); v(1)/v(6); v(1)];
+   q = 6;
+   B = [c, A; q, b];
+
+elseif (strcmp(method_name,'Butcher-7-6b-ERK'))
+
+   A = [z, z, z, z, z, z, z;
+        v(2)/v(5), z, z, z, z, z, z;
+        z, v(4)/v(5), z, z, z, z, z;
+        v(169)/v(1458), v(110)/v(729), -v(65)/v(1458), z, z, z, z;
+        -v(44)/v(675), -v(88)/v(135), v(76)/v(351), v(336)/v(325), z, z, z;
+        v(21)/v(106), z, -v(105)/v(689), -v(324)/v(689), v(45)/v(106), z, z;
+        -v(2517)/v(4864), -v(55)/v(38), v(10615)/v(31616), v(567)/v(7904), v(7245)/v(4864), v(2597)/v(2432), z];
+   b = [z, z, v(1375)/v(4992), v(6561)/v(20384), v(3375)/v(12544), v(53)/v(768), v(19)/v(294)];
+   c = [z; v(2)/v(5); v(4)/v(5); v(2)/v(9); v(8)/v(15); z; v(1)];
+   q = 6;
+   B = [c, A; q, b];
+
+elseif (strcmp(method_name,'Butcher-9-7-ERK'))
+
+   A = [z, z, z, z, z, z, z, z, z;
+        v(1)/v(6), z, z, z, z, z, z, z, z;
+        z, v(1)/v(3), z, z, z, z, z, z, z;
+        v(1)/v(8), z, v(3)/v(8), z, z, z, z, z, z;
+        v(148)/v(1331), z, v(150)/v(1331), -v(56)/v(1331), z, z, z, z, z;
+        -v(404)/v(243), z, -v(170)/v(27), v(4024)/v(1701), v(10648)/v(1701), z, z, z, z;
+        v(2466)/v(2401), z, v(1242)/v(343), -v(19176)/v(16807), -v(51909)/v(16807), v(1053)/v(2401), z, z, z;
+        v(5)/v(154), z, z, v(96)/v(539), -v(1815)/v(20384), -v(405)/v(2464), v(49)/v(1144), z, z;
+        -v(113)/v(32), z, -v(195)/v(22), v(32)/v(7), v(29403)/v(3584), -v(729)/v(512), v(1029)/v(1408), v(21)/v(16), z];
+   b = [z, z, z, v(32)/v(105), v(1771561)/v(6289920), v(243)/v(2560), v(16807)/v(74880), v(77)/v(1440), v(11)/v(270)];
+   c = [z; v(1)/v(6); v(1)/v(3); v(1)/v(2); v(2)/v(11); v(2)/v(3); v(6)/v(7); z; v(1)];
+   q = 7;
+   B = [c, A; q, b];
+
+elseif (strcmp(method_name,'CooperVerner-11-8-ERK'))
+
+   s21 = sqrt(21);
+   A = [z, z, z, z, z, z, z, z, z, z, z;
+        v(1)/v(2), z, z, z, z, z, z, z, z, z, z;
+        v(1)/v(4), v(1)/v(4), z, z, z, z, z, z, z, z, z;
+        v(1)/v(7), (-v(7)-3*s21)/98, (v(21)+5*s21)/49, z, z, z, z, z, z, z, z;
+        (v(11)+s21)/84, z, (v(18)+4*s21)/63, (v(21)-s21)/252, z, z, z, z, z, z, z;
+        (v(5)+s21)/48, z, (v(9)+s21)/36, (-v(231)+14*s21)/360, (v(63)-7*s21)/80, z, z, z, z, z, z;
+        (v(10)-s21)/42, z, (-v(432)+92*s21)/315, (v(633)-145*s21)/90, (-v(504)+115*s21)/70, (v(63)-13*s21)/35, z, z, z, z, z;
+        v(1)/v(14), z, z, z, (v(14)-3*s21)/126, (v(13)-3*s21)/63, v(1)/v(9), z, z, z, z;
+        v(1)/v(32), z, z, z, (v(91)-21*s21)/576, v(11)/v(72), (-v(385)-75*s21)/1152, (v(63)+13*s21)/128, z, z, z;
+        v(1)/v(14), z, z, z, v(1)/v(9), (-v(733)-147*s21)/2205, (v(515)+111*s21)/504, (-v(51)-11*s21)/56, (v(132)+28*s21)/245, z, z;
+        z, z, z, z, (-v(42)+7*s21)/18, (-v(18)+28*s21)/45, (-v(273)-53*s21)/72, (v(301)+53*s21)/72, (v(28)-28*s21)/45, (v(49)-7*s21)/18, z];
+   b = [v(1)/v(20), z, z, z, z, z, z, v(49)/v(180), v(16)/v(45), v(49)/v(180), v(1)/v(20)];
+   c = [z; v(1)/v(2); v(1)/v(2); (v(7)+s21)/14; (v(7)+s21)/14; v(1)/v(2); (v(7)-s21)/14; (v(7)-s21)/14; v(1)/v(2); (v(7)+s21)/14; v(1)];
+   q = 8;
    B = [c, A; q, b];
 
 elseif (strcmp(method_name,'Merson-4-3-ERK'))
@@ -1260,7 +1345,7 @@ elseif (strcmp(method_name,'SDIRK-5-4'))
    b = [v(25)/v(24), v(-49)/v(48), v(125)/v(16), v(-85)/v(12), v(1)/v(4)];
    c = [v(1)/v(4); v(3)/v(4); v(11)/v(20); v(1)/v(2); v(1)];
    b2 = [v(59)/v(48), v(-17)/v(96), v(225)/v(32), v(-85)/v(12), z];
-   q = 3;
+   q = 4;
    p = 3;
    B = [c, A; q, b; p, b2];
 
@@ -1470,7 +1555,7 @@ elseif (strcmp(method_name,'SSP3(3,3,2)-ERK'))
         v(1)/v(4), v(1)/v(4), z];
    b = [v(1)/v(6), v(1)/v(6), v(2)/v(3)];
    c = [z; v(1); v(1)/v(2)];
-   q = 2;
+   q = 3;
    B = [c, A; q, b];
 
 elseif (strcmp(method_name,'SSP3(3,3,2)-SDIRK'))
@@ -1491,7 +1576,7 @@ elseif (strcmp(method_name,'SSP3(3,3,3)-ERK'))
         v(1)/v(4), v(1)/v(4), z];
    b = [v(1)/v(6), v(1)/v(6), v(2)/v(3)];
    c = [z; v(1); v(1)/v(2)];
-   q = 2;
+   q = 3;
    B = [c, A; q, b];
 
 elseif (strcmp(method_name,'SSP3(3,3,3)-ESDIRK'))
@@ -1501,7 +1586,7 @@ elseif (strcmp(method_name,'SSP3(3,3,3)-ESDIRK'))
          v(7)/v(30),  v(1)/v(5), v(1)/v(15)];
    b = [v(1)/v(6), v(1)/v(6), v(2)/v(3)];
    c = [z; v(1); v(1)/v(2)];
-   q = 2;
+   q = 3;
    B = [c, A; q, b];
 
 elseif (strcmp(method_name,'SSP3(4,3,3)-ERK'))
@@ -1512,7 +1597,7 @@ elseif (strcmp(method_name,'SSP3(4,3,3)-ERK'))
           z, v(1)/v(4), v(1)/v(4), z];
    b = [z, v(1)/v(6), v(1)/v(6), v(2)/v(3)];
    c = [z;   z;   v(1); v(1)/v(2)];
-   q = 2;
+   q = 3;
    B = [c, A; q, b];
 
 elseif (strcmp(method_name,'SSP3(4,3,3)-SDIRK'))
@@ -1528,7 +1613,7 @@ elseif (strcmp(method_name,'SSP3(4,3,3)-SDIRK'))
           beta,     eta, delta, alpha];
    b = [z,     v(1)/v(6), v(1)/v(6), v(2)/v(3)];
    c = [alpha;   z;   v(1); v(1)/v(2)];
-   q = 2;
+   q = 3;
    B = [c, A; q, b];
 
 elseif (strcmp(method_name,'SSPRK(3,3)-Shu-Osher-ERK'))
