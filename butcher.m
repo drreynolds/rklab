@@ -67,35 +67,35 @@ function B = butcher(method_name,symbolic)
 % 
 %             Name             |  s |  q  lq  |  tol
 %   --------------------------------------------------
-%                 DBM-5-3-ERK  |  5 |  3   3  | 1e-15
-%           Ascher(2,3,3)-ERK  |  3 |  3   3  | 1e-40
-%           Ascher(2,3,2)-ERK  |  3 |  2   3  | 1e-40
-%           Ascher(2,2,2)-ERK  |  3 |  2   2  | 1e-40
-%           Ascher(3,4,3)-ERK  |  4 |  3   4  | 1e-17
-%           Ascher(4,4,3)-ERK  |  5 |  3   3  | 1e-40
-%             Knoth-Wolke-ERK  |  3 |  3   3  | 1e-40
-%                3/8-Rule-ERK  |  4 |  4   4  | 1e-40
-%                 Cooper4-ERK  |  4 |  3   3  | 1e-40
-%                 Cooper6-ERK  |  6 |  4-  4  | 1e-40
 %                     ERK-1-1  |  1 |  1   1  | 1e-40
 %                     ERK-2-2  |  2 |  2   2  | 1e-40
-%                     ERK-4-4  |  4 |  4   4  | 1e-40
-%             Butcher-7-6-ERK  |  7 |  6   6  | 1e-40
-%            Butcher-7-6b-ERK  |  7 |  6   6  | 1e-40
-%             Butcher-9-7-ERK  |  9 |  6+  7  | 1e-40
-%       CooperVerner-11-8-ERK  | 11 |  6+  8  | 1e-14
-%              ARK(2,3,2)-ERK  |  3 |  2   3  | 1e-40
 %             SSP2(2,2,2)-ERK  |  2 |  2   2  | 1e-40
+%           Ascher(2,3,2)-ERK  |  3 |  2   3  | 1e-40
+%              ARK(2,3,2)-ERK  |  3 |  2   3  | 1e-40
+%           Ascher(2,2,2)-ERK  |  3 |  2   2  | 1e-40
 %        SSP2(3,3,2)-lpm1-ERK  |  3 |  2   2  | 1e-40
 %        SSP2(3,3,2)-lpm2-ERK  |  3 |  2   2  | 1e-40
 %        SSP2(3,3,2)-lpum-ERK  |  3 |  2   2  | 1e-40
 %       SSP2(3,3,2)-lspum-ERK  |  3 |  2   2  | 1e-40
 %           SSP2(3,3,2)-a-ERK  |  3 |  2   2  | 1e-40
 %           SSP2(3,3,2)-b-ERK  |  3 |  2   2  | 1e-40
+%           Ascher(2,3,3)-ERK  |  3 |  3   3  | 1e-40
+%             Knoth-Wolke-ERK  |  3 |  3   3  | 1e-40
 %             SSP3(3,3,2)-ERK  |  3 |  3   3  | 1e-40
 %             SSP3(3,3,3)-ERK  |  3 |  3   3  | 1e-40
-%             SSP3(4,3,3)-ERK  |  4 |  3   3  | 1e-40
 %    SSPRK(3,3)-Shu-Osher-ERK  |  3 |  3   3  | 1e-40
+%           Ascher(3,4,3)-ERK  |  4 |  3   4  | 1e-17
+%                 Cooper4-ERK  |  4 |  3   3  | 1e-40
+%             SSP3(4,3,3)-ERK  |  4 |  3   3  | 1e-40
+%           Ascher(4,4,3)-ERK  |  5 |  3   3  | 1e-40
+%                 DBM-5-3-ERK  |  5 |  3   3  | 1e-15
+%                3/8-Rule-ERK  |  4 |  4   4  | 1e-40
+%                     ERK-4-4  |  4 |  4   4  | 1e-40
+%                 Cooper6-ERK  |  6 |  4-  4  | 1e-40
+%             Butcher-7-6-ERK  |  7 |  6   6  | 1e-40
+%            Butcher-7-6b-ERK  |  7 |  6   6  | 1e-40
+%             Butcher-9-7-ERK  |  9 |  6+  7  | 1e-40
+%       CooperVerner-11-8-ERK  | 11 |  6+  8  | 1e-14
 %
 %
 % Explicit, embedded methods:
@@ -103,20 +103,20 @@ function B = butcher(method_name,symbolic)
 %                              |    |  Method |  Embedding  |
 %             Name             |  s |  q  lq  |  p  lp      | tol
 %   -----------------------------------------------------------------
-%          ARK3(2)4L[2]SA-ERK  |  4 |  3   3  |  2   2       | 1e-25
-%          ARK4(3)6L[2]SA-ERK  |  6 |  4   4  |  3   3       | 1e-25
-%          ARK4(3)7L[2]SA-ERK  |  7 |  4   4  |  3   3       | 1e-25
-%          ARK5(4)8L[2]SA-ERK  |  8 |  5   5  |  4   4       | 1e-25
-%         ARK5(4)8L[2]SAb-ERK  |  8 |  5   5  |  4   4       | 1e-25
-%        Sayfy-Aburub-4-3-ERK  |  6 |  4   4  |  3   3       | 1e-40
 %              Heun-Euler-ERK  |  2 |  2   2  |  1   1       | 1e-40
-%        Bogacki-Shampine-ERK  |  4 |  3   3  |  2   2       | 1e-40
-%                Fehlberg-ERK  |  6 |  4   4  |  5   5       | 1e-40
-%               Cash-Karp-ERK  |  6 |  5   5  |  4   4       | 1e-40
-%          Dormand-Prince-ERK  |  7 |  5   5  |  4   4       | 1e-40
 %                     ERK-3-3  |  3 |  3   3  |  2   2       | 1e-40
+%          ARK3(2)4L[2]SA-ERK  |  4 |  3   3  |  2   2       | 1e-25
+%        Bogacki-Shampine-ERK  |  4 |  3   3  |  2   2       | 1e-40
 %              Merson-4-3-ERK  |  5 |  4   4  |  3   5       | 1e-40
 %           Zonneveld-4-3-ERK  |  5 |  4   4  |  3   3       | 1e-40
+%          ARK4(3)6L[2]SA-ERK  |  6 |  4   4  |  3   3       | 1e-25
+%        Sayfy-Aburub-4-3-ERK  |  6 |  4   4  |  3   3       | 1e-40
+%          ARK4(3)7L[2]SA-ERK  |  7 |  4   4  |  3   3       | 1e-25
+%                Fehlberg-ERK  |  6 |  5   5  |  4   4       | 1e-40
+%               Cash-Karp-ERK  |  6 |  5   5  |  4   4       | 1e-40
+%          Dormand-Prince-ERK  |  7 |  5   5  |  4   4       | 1e-40
+%          ARK5(4)8L[2]SA-ERK  |  8 |  5   5  |  4   4       | 1e-25
+%         ARK5(4)8L[2]SAb-ERK  |  8 |  5   5  |  4   4       | 1e-25
 %              Verner-6-5-ERK  |  8 |  6   6  |  5   5       | 1e-40
 %            Fehlberg-8-7-ERK  | 13 |  6+  8  |  6+  7       | 1e-40
 % 
@@ -125,17 +125,11 @@ function B = butcher(method_name,symbolic)
 % 
 %             Name             |  s |  q  lq   A   B   L  |  qs  tol
 %   ------------------------------------------------------------------
-%              DBM-5-3-ESDIRK  |  5 |  3   3   Y       Y  |  1  1e-16
-%         Ascher(2,3,3)-SDIRK  |  3 |  3   3   Y   Y      |  1  1e-40
+%           SSP2(2,2,2)-SDIRK  |  2 |  2   2   Y   Y   Y  |  1  1e-40
+%                   SDIRK-2-2  |  2 |  2   2   Y       Y  |  1  1e-40
 %         Ascher(2,3,2)-SDIRK  |  3 |  2   2   Y       Y  |  1  1e-40
 %         Ascher(2,2,2)-SDIRK  |  3 |  2   2   Y       Y  |  1  1e-40
-%         Ascher(3,4,3)-SDIRK  |  4 |  3   3   Y       Y  |  1  1e-17
-%         Ascher(4,4,3)-SDIRK  |  4 |  3   3   Y       Y  |  1  1e-40
-%              Cooper4-ESDIRK  |  4 |  3   3   Y          |  1  1e-40
-%              Cooper6-ESDIRK  |  6 |  4-  4   Y          |  1  1e-40
-%                   SDIRK-2-2  |  2 |  2   2   Y       Y  |  1  1e-40
 %            ARK(2,3,2)-SDIRK  |  3 |  2   2   Y       Y  |  2  1e-40
-%           SSP2(2,2,2)-SDIRK  |  2 |  2   2   Y   Y   Y  |  1  1e-40
 %      SSP2(3,3,2)-lpm1-SDIRK  |  3 |  2   2   Y       Y  |  1  1e-40
 %      SSP2(3,3,2)-lpm2-SDIRK  |  3 |  2   2   Y       Y  |  1  1e-40
 %      SSP2(3,3,2)-lpum-SDIRK  |  3 |  2   2   Y       Y  |  1  1e-40
@@ -143,10 +137,16 @@ function B = butcher(method_name,symbolic)
 %          SSP2(3,3,2)-a-DIRK  |  3 |  2   2   Y       Y  |  1  1e-40
 %          SSP2(3,3,2)-b-DIRK  |  3 |  2   2   Y       Y  |  1  1e-40
 %           SSP3(3,3,2)-SDIRK  |  3 |  2   2   Y       Y  |  1  1e-40
+%         Ascher(2,3,3)-SDIRK  |  3 |  3   3   Y   Y      |  1  1e-40
 %          SSP3(3,3,3)-ESDIRK  |  3 |  3   3              |  1  1e-40
-%           SSP3(4,3,3)-SDIRK  |  4 |  3   3   Y          |  1  1e-14
 %                   EDIRK-3-3  |  3 |  3   3   Y          |  1  1e-40
 %                  ESDIRK-3-3  |  3 |  3   3   Y          |  1  1e-40
+%           SSP3(4,3,3)-SDIRK  |  4 |  3   3   Y          |  1  1e-14
+%         Ascher(3,4,3)-SDIRK  |  4 |  3   3   Y       Y  |  1  1e-17
+%         Ascher(4,4,3)-SDIRK  |  4 |  3   3   Y       Y  |  1  1e-40
+%              Cooper4-ESDIRK  |  4 |  3   3   Y          |  1  1e-40
+%              DBM-5-3-ESDIRK  |  5 |  3   3   Y       Y  |  1  1e-16
+%              Cooper6-ESDIRK  |  6 |  4-  4   Y          |  1  1e-40
 %
 %
 % Diagonally-implicit, embedded methods:
@@ -154,21 +154,21 @@ function B = butcher(method_name,symbolic)
 %                              |    |       Method        |      Embedding      |
 %             Name             |  s |  q  lq   A   B   L  |  p  lp   A   B   L  |  qs  tol
 %   ----------------------------------------------------------------------------------------
+%                   SDIRK-2-1  |  2 |  2   2   Y   Y      |  1   1   Y   Y   Y  |  1  1e-40
+%               TRBDF2-ESDIRK  |  3 |  2   2   Y       Y  |  3   3              |  2  1e-40
+%                 TRX2-ESDIRK  |  3 |  2   2   Y          |  3   3              |  2  1e-40
+%            Billington-SDIRK  |  3 |  2   2   Y          |  3   3              |  1  1e-11
 %       ARK3(2)4L[2]SA-ESDIRK  |  4 |  3   3   Y       Y  |  2   2   Y          |  2  1e-25
+%       Kvaerno(4,2,3)-ESDIRK  |  4 |  3   3   Y          |  2   2   Y          |  2  1e-14
+%                   SDIRK-5-4  |  5 |  4   4   Y       Y  |  3   3           Y  |  1  1e-40
+%           Cash(5,3,4)-SDIRK  |  5 |  4   4   Y       Y  |  3   3   Y          |  1  1e-10
+%       Kvaerno(5,3,4)-ESDIRK  |  5 |  4   4   Y          |  3   3   Y          |  2  1e-14
+%           Cash(5,2,4)-SDIRK  |  5 |  4   4   Y       Y  |  2   2   Y          |  1  1e-10
 %       ARK4(3)6L[2]SA-ESDIRK  |  6 |  4   4   Y       Y  |  3   3   Y          |  2  1e-40
 %       ARK4(3)7L[2]SA-ESDIRK  |  7 |  4   4   Y       Y  |  3   3   Y       Y  |  2  1e-25
 %       ARK5(4)8L[2]SA-ESDIRK  |  8 |  5   5   Y       Y  |  4   4   Y          |  2  1e-25
 %      ARK5(4)8L[2]SAb-ESDIRK  |  8 |  5   5   Y       Y  |  4   4   Y          |  2  1e-25
-%               TRBDF2-ESDIRK  |  3 |  2   2   Y       Y  |  3   3              |  2  1e-40
-%                 TRX2-ESDIRK  |  3 |  2   2   Y          |  3   3              |  2  1e-40
-%            Billington-SDIRK  |  3 |  2   2   Y          |  3   3              |  1  1e-11
-%           Cash(5,2,4)-SDIRK  |  5 |  4   4   Y       Y  |  2   2   Y          |  1  1e-10
-%           Cash(5,3,4)-SDIRK  |  5 |  4   4   Y       Y  |  3   3   Y          |  1  1e-10
-%       Kvaerno(4,2,3)-ESDIRK  |  4 |  3   3   Y          |  2   2   Y          |  2  1e-14
-%       Kvaerno(5,3,4)-ESDIRK  |  5 |  4   4   Y          |  3   3   Y          |  2  1e-14
 %       Kvaerno(7,4,5)-ESDIRK  |  7 |  5   5   Y       Y  |  4   4   Y          |  2  1e-15
-%                   SDIRK-2-1  |  2 |  2   2   Y   Y      |  1   1   Y   Y   Y  |  1  1e-40
-%                   SDIRK-5-4  |  5 |  4   4   Y       Y  |  3   3           Y  |  1  1e-40
 %
 %
 % Fully-implicit, non-embedded methods:
@@ -176,31 +176,31 @@ function B = butcher(method_name,symbolic)
 %             Name             |  s |  q  lq   A   B   L  |  qs  tol
 %   --------------------------------------------------------------------
 %                     IRK-1-1  |  1 |  1   1   Y   Y   Y  |  1  1e-40
+%         LobattoIIIC-2-2-IRK  |  2 |  2   2   Y   Y   Y  |  1  1e-40
 %      Crank-Nicolson-2-2-IRK  |  2 |  2   2   Y          |  2  1e-40
 %                    SIRK-2-2  |  2 |  2   2   Y       Y  |  2  1e-40
-%               Gauss-2-4-IRK  |  2 |  4   4   Y   Y      |  2  1e-40
-%            RadauIIA-2-3-IRK  |  2 |  3   3   Y   Y   Y  |  2  1e-40
-%          LobattoIII-2-2-IRK  |  2 |  2   2              |  1  1e-40
 %         LobattoIIIA-2-2-IRK  |  2 |  2   2   Y          |  2  1e-40
-%         LobattoIIIC-2-2-IRK  |  2 |  2   2   Y   Y   Y  |  1  1e-40
-%               Gauss-3-6-IRK  |  3 |  6   6   Y   Y      |  3  1e-40
-%              RadauI-3-5-IRK  |  3 |  5   5              |  3  1e-40
-%             RadauIA-3-5-IRK  |  3 |  5   5   Y   Y   Y  |  2  1e-40
-%             RadauII-3-5-IRK  |  3 |  5   5              |  2  1e-40
-%            RadauIIA-3-5-IRK  |  3 |  5   5   Y   Y   Y  |  3  1e-40
-%          LobattoIII-3-4-IRK  |  3 |  4   4              |  2  1e-40
+%          LobattoIII-2-2-IRK  |  2 |  2   2              |  1  1e-40
+%            RadauIIA-2-3-IRK  |  2 |  3   3   Y   Y   Y  |  2  1e-40
+%               Gauss-2-4-IRK  |  2 |  4   4   Y   Y      |  2  1e-40
+%         LobattoIIIC-3-4-IRK  |  3 |  4   4   Y   Y   Y  |  2  1e-40
 %         LobattoIIIA-3-4-IRK  |  3 |  4   4   Y          |  3  1e-40
 %         LobattoIIIB-3-4-IRK  |  3 |  4   4   Y          |  1  1e-40
-%         LobattoIIIC-3-4-IRK  |  3 |  4   4   Y   Y   Y  |  2  1e-40
-%          LobattoIII-4-6-IRK  |  4 |  6   6              |  3  1e-40
+%          LobattoIII-3-4-IRK  |  3 |  4   4              |  2  1e-40
+%             RadauIA-3-5-IRK  |  3 |  5   5   Y   Y   Y  |  2  1e-40
+%            RadauIIA-3-5-IRK  |  3 |  5   5   Y   Y   Y  |  3  1e-40
+%              RadauI-3-5-IRK  |  3 |  5   5              |  3  1e-40
+%             RadauII-3-5-IRK  |  3 |  5   5              |  2  1e-40
+%               Gauss-3-6-IRK  |  3 |  6   6   Y   Y      |  3  1e-40
+%         LobattoIIIC-4-6-IRK  |  4 |  6   6   Y   Y   Y  |  3  1e-40
 %         LobattoIIIA-4-6-IRK  |  4 |  6   6   Y          |  4  1e-40
 %         LobattoIIIB-4-6-IRK  |  4 |  6   6   Y          |  2  1e-40
-%         LobattoIIIC-4-6-IRK  |  4 |  6   6   Y   Y   Y  |  3  1e-40
-%            RadauIIA-5-9-IRK  |  5 |  9   8   Y   Y   Y  |  5  1e-15
-%          LobattoIII-5-8-IRK  |  5 |  8   8              |  4  1e-40
+%          LobattoIII-4-6-IRK  |  4 |  6   6              |  3  1e-40
+%         LobattoIIIC-5-8-IRK  |  5 |  8   8   Y   Y   Y  |  4  1e-40
 %         LobattoIIIA-5-8-IRK  |  5 |  8   8   Y          |  5  1e-40
 %         LobattoIIIB-5-8-IRK  |  5 |  8   8   Y          |  3  1e-40
-%         LobattoIIIC-5-8-IRK  |  5 |  8   8   Y   Y   Y  |  4  1e-40
+%          LobattoIII-5-8-IRK  |  5 |  8   8              |  4  1e-40
+%            RadauIIA-5-9-IRK  |  5 |  9   8   Y   Y   Y  |  5  1e-15
 %              Gauss-6-12-IRK  |  6 | 12   8   Y   Y      |  6  1e-16
 %   
 %
@@ -718,7 +718,7 @@ elseif (strcmp(method_name,'Cooper6-ESDIRK'))
         v(1)/v(4), beta/v(2), (v(1)-v(6)*beta)/v(4), beta, z, z;
         z, v(-2)*beta, (v(1)-v(6)*beta-v(8)*beta^2)/(v(1)-v(4)*beta), v(4)*beta/(v(1)-v(4)*beta), z, z;
         v(1)/v(6), z, z, v(2)/v(3), v(1)/v(6), z];
-   q = 5
+   q = 5;
    B = [c, A; q, b];
 
 elseif (strcmp(method_name,'Heun-Euler-ERK'))
@@ -749,11 +749,11 @@ elseif (strcmp(method_name,'Fehlberg-ERK'))
         v(1932)/v(2197), v(-7200)/v(2197), v(7296)/v(2197), z, z, z; ...
         v(439)/v(216), v(-8), v(3680)/v(513), v(-845)/v(4104), z, z; ...
         v(-8)/v(27), v(2), v(-3544)/v(2565), v(1859)/v(4104), v(-11)/v(40), z];
-   b = [ v(25)/v(216), z, v(1408)/v(2565), v(2197)/v(4104), v(-1)/v(5), z];
-   b2 = [ v(16)/v(135), z, v(6656)/v(12825), v(28561)/v(56430), v(-9)/v(50), v(2)/v(55)];
+   b = [ v(16)/v(135), z, v(6656)/v(12825), v(28561)/v(56430), v(-9)/v(50), v(2)/v(55)];
+   b2 = [ v(25)/v(216), z, v(1408)/v(2565), v(2197)/v(4104), v(-1)/v(5), z];
    c = [ z; v(1)/v(4); v(3)/v(8); v(12)/v(13); v(1); v(1)/v(2)];
-   q = 4;
-   p = 5;
+   q = 5;
+   p = 4;
    B = [c, A; q, b; p, b2];
 
 elseif (strcmp(method_name,'Cash-Karp-ERK'))
