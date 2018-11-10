@@ -67,7 +67,7 @@ if (test_exp_nonembed)
       box = tests{i}{3};
       B = butcher(mname,use_symbolic);
       s = size(B,2)-1;
-      [q,p,qs,lq,lp,Bs,As,Ls,BsE,AsE,LsE,tol] = check_rk(B,0,plotregions,box,mname,fname);
+      [q,p,qs,lq,lp,tol] = check_rk(B,0,plotregions,box,mname,fname);
       fprintf(' %26s  | %2i | %2i  %2i  | %.0e\n', mname,s,q,lq,tol);
    end
    fprintf('\n');
@@ -77,7 +77,7 @@ if (test_exp_nonembed)
       mname = tests{i}{1};
       B = butcher(mname,false);
       s = size(B,2)-1;
-      [q,p,qs,lq,lp,Bs,As,Ls,BsE,AsE,LsE,tol] = check_rk(B,0,false,[0,1,0,1],mname,' ');
+      q = check_rk(B);
       if (q ~= B(s+1,1))
          fprintf('  Warning: %26s has mismatched orders (%i vs %i)\n', mname, q, B(s+1,1));
       end
@@ -117,7 +117,7 @@ if (test_exp_embed)
       box = tests{i}{3};
       B = butcher(mname,use_symbolic);
       s = size(B,2)-1;
-      [q,p,qs,lq,lp,Bs,As,Ls,BsE,AsE,LsE,tol] = check_rk(B,0,plotregions,box,mname,fname);
+      [q,p,qs,lq,lp,tol] = check_rk(B,0,plotregions,box,mname,fname);
       fprintf(' %26s  | %2i | %2i  %2i  | %2i  %2i       | %.0e\n', mname,s,q,lq,p,lp,tol);
    end
    fprintf('\n');
@@ -127,7 +127,7 @@ if (test_exp_embed)
       mname = tests{i}{1};
       B = butcher(mname,false);
       s = size(B,2)-1;
-      [q,p,qs,lq,lp,Bs,As,Ls,BsE,AsE,LsE,tol] = check_rk(B,0,false,[0,1,0,1],mname,' ');
+      [q,p] = check_rk(B);
       if ((q ~= B(s+1,1)) || (p ~= B(s+2,1)))
          fprintf('  Warning: %26s has mismatched orders (%i,%i vs %i,%i)\n', ...
                  mname, q, p, B(s+1,1), B(s+2,1));
@@ -173,7 +173,7 @@ if (test_dirk_nonembed)
       box = tests{i}{3};
       B = butcher(mname,use_symbolic);
       s = size(B,2)-1;
-      [q,p,qs,lq,lp,Bs,As,Ls,BsE,AsE,LsE,tol] = check_rk(B,0,plotregions,box,mname,fname);
+      [q,p,qs,lq,lp,tol,Bs,As,Ls] = check_rk(B);
       Bs_ = ' ';
       As_ = ' ';
       Ls_ = ' ';
@@ -195,7 +195,7 @@ if (test_dirk_nonembed)
       mname = tests{i}{1};
       B = butcher(mname,false);
       s = size(B,2)-1;
-      [q,p,qs,lq,lp,Bs,As,Ls,BsE,AsE,LsE,tol] = check_rk(B,0,false,[0,1,0,1],mname,' ');
+      q = check_rk(B);
       if (q ~= B(s+1,1))
          fprintf('  Warning: %26s has mismatched orders (%i vs %i)\n', mname, q, B(s+1,1));
       end
@@ -235,7 +235,7 @@ if (test_dirk_embed)
       box = tests{i}{3};
       B = butcher(mname,use_symbolic);
       s = size(B,2)-1;
-      [q,p,qs,lq,lp,Bs,As,Ls,BsE,AsE,LsE,tol] = check_rk(B,0,plotregions,box,mname,fname);
+      [q,p,qs,lq,lp,tol,Bs,As,Ls,BsE,AsE,LsE] = check_rk(B,0,plotregions,box,mname,fname);
       Bs_ = ' ';
       As_ = ' ';
       Ls_ = ' ';
@@ -270,7 +270,7 @@ if (test_dirk_embed)
       mname = tests{i}{1};
       B = butcher(mname,false);
       s = size(B,2)-1;
-      [q,p,qs,lq,lp,Bs,As,Ls,BsE,AsE,LsE,tol] = check_rk(B,0,false,[0,1,0,1],mname,' ');
+      [q,p] = check_rk(B);
       if ((q ~= B(s+1,1)) || (p ~= B(s+2,1)))
          fprintf('  Warning: %26s has mismatched orders (%i,%i vs %i,%i)\n', ...
                  mname, q, p, B(s+1,1), B(s+2,1));
@@ -321,7 +321,7 @@ if (test_irk)
       box = tests{i}{3};
       B = butcher(mname,use_symbolic);
       s = size(B,2)-1;
-      [q,p,qs,lq,lp,Bs,As,Ls,BsE,AsE,LsE,tol] = check_rk(B,0,plotregions,box,mname,fname);
+      [q,p,qs,lq,lp,tol,Bs,As,Ls] = check_rk(B,0,plotregions,box,mname,fname);
       Bs_ = ' ';
       As_ = ' ';
       Ls_ = ' ';
@@ -343,7 +343,7 @@ if (test_irk)
       mname = tests{i}{1};
       B = butcher(mname,false);
       s = size(B,2)-1;
-      [q,p,qs,lq,lp,Bs,As,Ls,BsE,AsE,LsE,tol] = check_rk(B,0,false,[0,1,0,1],mname,' ');
+      q = check_rk(B);
       if (q ~= B(s+1,1))
          fprintf('  Warning: %26s has mismatched orders (%i vs %i)\n', mname, q, B(s+1,1));
       end

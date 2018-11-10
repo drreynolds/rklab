@@ -1,5 +1,9 @@
-function [q,p,qs,lq,lp,Bs,As,Ls,BsE,AsE,LsE,tol] = check_rk(B,reportL,doPlot,box,mname,fname)
-% Usage: [q,p,qs,lq,lp,Bs,As,Ls,BsE,AsE,LsE,tol] = check_rk(B,reportL,doPlot,box,mname,fname)
+function [q,p,qs,lq,lp,tol,Bs,As,Ls,BsE,AsE,LsE] = check_rk(B,reportL,doPlot,box,mname,fname)
+% Usage: [q,p,qs,lq,lp,tol,Bs,As,Ls,BsE,AsE,LsE] = check_rk(B,reportL,doPlot,box,mname,fname)
+%  or
+% Usage: [q,p,qs,lq,lp,tol,Bs,As,Ls,BsE,AsE,LsE] = check_rk(B,reportL)
+%  or
+% Usage: [q,p,qs,lq,lp,tol,Bs,As,Ls,BsE,AsE,LsE] = check_rk(B)
 %
 % Checks the Butcher table B to determine:
 % * the analytical order of accuracy (up to 6th) -> q
@@ -64,6 +68,18 @@ function [q,p,qs,lq,lp,Bs,As,Ls,BsE,AsE,LsE,tol] = check_rk(B,reportL,doPlot,box
 % All rights reserved.
 % For details, see the LICENSE file.
 %------------------------------------------------------------
+
+% handle different call structures
+if ((nargin ~= 6) && (nargin ~= 2) && (nargin ~= 1))
+   error('check_rk error: must be called with exactly 1, 2 or 6 arguments');
+end
+if (nargin < 6)   % set defaults for doPlot,box,mname,fname
+   doPlot = false;
+   mname = 'Butcher table';
+end
+if (nargin == 1)
+   reportL = 0;
+end
 
 % set tolerance for assessing stability
 StabTol = 1e-8;
