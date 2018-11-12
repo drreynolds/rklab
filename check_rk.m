@@ -276,7 +276,7 @@ function [q,lq] = table_order(c,A,b,tol,reportL)
       if (abs(tst) > tol)
          Ofail = true;
          if (reportL>1)
-            fprintf('    Method fails 3nd order condition (tst = %g)\n', tst);
+            fprintf('    Method fails 3rd order condition (tst = %g)\n', tst);
          end
       end
 
@@ -285,7 +285,7 @@ function [q,lq] = table_order(c,A,b,tol,reportL)
          Ofail = true;
          Lfail = true;
          if (reportL>1)
-            fprintf('    Method fails linear 3nd order condition (tst = %g)\n', tst);
+            fprintf('    Method fails linear 3rd order condition (tst = %g)\n', tst);
          end
       end
 
@@ -488,7 +488,7 @@ function [q,lq] = table_order(c,A,b,tol,reportL)
             end
          end
 
-         tst = double((b.*c.*c)'*A*A*c - sym(1)/sym(36));
+         tst = double(b'*((A*A*c).*(A*c)) - sym(1)/sym(72));
          if (abs(tst) > tol)
             Ofail = true;
             if (reportL>1)
@@ -496,7 +496,7 @@ function [q,lq] = table_order(c,A,b,tol,reportL)
             end
          end
 
-         tst = double(b'*((A*A*c).*(A*c)) - sym(1)/sym(72));
+         tst = double(b'*(c.*(A*(c.^3))) - sym(1)/sym(24));
          if (abs(tst) > tol)
             Ofail = true;
             if (reportL>1)
@@ -504,7 +504,7 @@ function [q,lq] = table_order(c,A,b,tol,reportL)
             end
          end
 
-         tst = double(b'*(c.*(A*(c.^3))) - sym(1)/sym(24));
+         tst = double(b'*(c.*(A*(c.*(A*c)))) - sym(1)/sym(48));
          if (abs(tst) > tol)
             Ofail = true;
             if (reportL>1)
@@ -512,7 +512,7 @@ function [q,lq] = table_order(c,A,b,tol,reportL)
             end
          end
 
-         tst = double(b'*(c.*(A*(c.*(A*c)))) - sym(1)/sym(48));
+         tst = double( b'*(c.*(A*A*(c.*c))) - sym(1)/sym(72));
          if (abs(tst) > tol)
             Ofail = true;
             if (reportL>1)
@@ -520,19 +520,11 @@ function [q,lq] = table_order(c,A,b,tol,reportL)
             end
          end
 
-         tst = double( b'*(c.*(A*A*(c.*c))) - sym(1)/sym(72));
-         if (abs(tst) > tol)
-            Ofail = true;
-            if (reportL>1)
-               fprintf('    Method fails 6th order condition J (tst = %g)\n', tst);
-            end
-         end
-
          tst = double( b'*(c.*(A*A*A*c)) - sym(1)/sym(144));
          if (abs(tst) > tol)
             Ofail = true;
             if (reportL>1)
-               fprintf('    Method fails 6th order condition K (tst = %g)\n', tst);
+               fprintf('    Method fails 6th order condition J (tst = %g)\n', tst);
             end
          end
 
