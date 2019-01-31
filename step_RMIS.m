@@ -28,8 +28,9 @@ function [Y,m] = step_RMIS(fs,ff,Jf,t0,Y0,Bo,Bi,hs,hf)
 %                    do is a vector of embedding weights (1-by-so),
 %              The [po, do] row is optional, and is unused in this
 %              routine.  Also, the qo value is unused here.
-%              Note: the MIS method assumes that the outer method stage
-%              times are sorted, i.e. co(i+1) > co(i)  for all i.
+%              Note: the RMIS method assumes that the outer method stage
+%              times are sorted, i.e. 
+%                    0 <= co(1) <= co(2) <= ... <= co(so) <= 1
 %     Bi     = Butcher table for a single step of an 'inner' (fast) method
 %              (can be ERK, DIRK or IRK)
 %                 Bi = [ci Ai;
@@ -69,6 +70,10 @@ Ao = Bo(1:so,2:so+1);     % ERK coefficients
 if (max(max(abs(triu(Ao)))) > 0)
    error('Error: Bo does not specify an explicit RK method table')
 end
+Delta_co = co(2:so)-co(1:so-1);
+if ( (co(1) < 0) || (min(Delta_co) < 0) || (co(so)>1))
+   error('Error: Bo does not satisfy sorted stage time reqirements')
+end
 
 % extract RK method information from Bi
 [Brows, Bcols] = size(Bi);
@@ -107,40 +112,49 @@ Y = Y + hs*bo(1)*(Fs(:,1) + ff(t0,Y));
 % iterate over remaining outer stages
 for i=2:so
 
-   % determine 'inner' ODE for this stage
-   %   RHS function
-   for j=1:i-1
-      fscale(j) = (Ao(i,j)-Ao(i-1,j))/(co(i)-co(i-1));
+   % determine whether this stage involves fast evolution
+   if (Delta_co(i-1) > 0)
+   
+      % determine 'inner' ODE for this stage
+      %   RHS function
+      for j=1:i-1
+         fscale(j) = (Ao(i,j)-Ao(i-1,j))/Delta_co(i-1);
+      end
+      fi = @(t,y) ff(t,y) + Fs*fscale;
+      %   time interval
+      tspan = [tcur, tcur + Delta_co(i-1)*hs];
+      %   num internal time steps
+      ni = ceil(Delta_co(i-1)*hs/hf);
+      %   step size
+      hi = Delta_co(i-1)*hs/ni;
+
+      % call inner RK method solver to perform substepping
+      if (innerRK == 2)         % IRK inner method
+         [tvals, V, mi, ~, ~] = solve_IRK(fi, Jf, tspan, Ys, Bi, rtol, atol, hi, hi, hi);
+      elseif (innerRK == 1)     % DIRK inner method
+         [tvals, V, mi, ~, ~] = solve_DIRK(fi, Jf, tspan, Ys, Bi, rtol, atol, hi, hi, hi);
+      else                      % ERK inner method
+         [tvals, V, mi, ~] = solve_ERK(fi, estab, tspan, Ys, Bi, rtol, atol, hi, hi, hi);
+      end
+      m = m + mi;
+
+      % update slow 'solution' as result from fast solve
+      Ys = V(:,end);
+      tcur = t0 + co(i)*hs;
+      Fs(:,i) = fs(tcur,Ys);
+
+      % update overall solution; note that since inner method has
+      % explicit first stage, then its contribution to overall
+      % solution may be obtained by evaluating fast RHS at the same
+      % time as the slow
+      Y = Y + hs*bo(i)*(Fs(:,i) + ff(tcur,Ys));
+
+   % or if this just requires a simple ERK update
+   else
+      
+      %--- I'm not sure what goes here ---% 
+      
    end
-   fi = @(t,y) ff(t,y) + Fs*fscale;
-   %   time interval
-   tspan = [tcur, tcur + (co(i)-co(i-1))*hs];
-   %   num internal time steps
-   ni = ceil((co(i)-co(i-1))*hs/hf);
-   %   step size
-   hi = (co(i)-co(i-1))*hs/ni;
-
-   % call inner RK method solver to perform substepping
-   if (innerRK == 2)         % IRK inner method
-      [tvals, V, mi, ~, ~] = solve_IRK(fi, Jf, tspan, Ys, Bi, rtol, atol, hi, hi, hi);
-   elseif (innerRK == 1)     % DIRK inner method
-      [tvals, V, mi, ~, ~] = solve_DIRK(fi, Jf, tspan, Ys, Bi, rtol, atol, hi, hi, hi);
-   else                      % ERK inner method
-      [tvals, V, mi, ~] = solve_ERK(fi, estab, tspan, Ys, Bi, rtol, atol, hi, hi, hi);
-   end
-   m = m + mi;
-
-   % update slow 'solution' as result from fast solve
-   Ys = V(:,end);
-   tcur = t0 + co(i)*hs;
-   Fs(:,i) = fs(tcur,Ys);
-
-   % update overall solution; note that since inner method has
-   % explicit first stage, then its contribution to overall
-   % solution may be obtained by evaluating fast RHS at the same
-   % time as the slow
-   Y = Y + hs*bo(i)*(Fs(:,i) + ff(tcur,Ys));
-
 end
 
 
