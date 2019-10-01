@@ -74,7 +74,7 @@ hf = hfinit;
 for tstep = 2:length(tvals)
 
    % loop over internal time steps to get to desired output time
-   while (t < tvals(tstep+1)*ONEMSM)
+   while ((t-tvals(tstep+1))*h < 0)
 
       % bound internal time step
       h = max([h, hmin]);            % enforce minimum time step size

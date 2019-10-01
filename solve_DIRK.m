@@ -7,8 +7,8 @@ function [tvals,Y,nsteps,lits,h] = solve_DIRK(fcn,Jfcn,tvals,Y0,B,rtol,atol,hmin
 %     Y(t0) = [y1(t0), y2(t0), ..., ym(t0)]'.
 %
 % Inputs:
-%     fcn    = string holding function name for F(t,Y)
-%     Jfcn   = string holding function name for Jacobian of F, J(t,Y)
+%     fcn    = function handle for F(t,Y)
+%     Jfcn   = function handle for Jacobian of F, J(t,Y)%
 %     tvals  = [t0, t1, t2, ..., tN]
 %     Y0     = initial value array (column vector of length m)
 %     B      = Butcher matrix for IRK coefficients, of the form
@@ -103,7 +103,7 @@ lits   = 0;
 for tstep = 2:length(tvals)
 
    % loop over internal time steps to get to desired output time
-   while (t < tvals(tstep)*ONEMSM)
+   while ((t-tvals(tstep))*h < 0)
 
       % bound internal time step
       h = max([h, hmin]);            % enforce minimum time step size

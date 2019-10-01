@@ -101,7 +101,7 @@ lits   = 0;
 for tstep = 2:length(tvals)
 
    % loop over internal time steps to get to desired output time
-   while (t < tvals(tstep)*ONEMSM)
+   while ((t-tvals(tstep))*h < 0)
 
       % bound internal time step
       h = max([h, hmin]);            % enforce minimum time step size

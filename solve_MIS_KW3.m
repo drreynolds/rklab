@@ -61,7 +61,7 @@ Jf = @(t,y) 0;  % no Jacobian required for explicit+explicit methods
 for tstep = 1:N
 
    % loop over internal time steps to get to desired output time
-   while (t < tvals(tstep+1)*ONEMSM)
+   while ((t-tvals(tstep+1))*hs < 0)
 
       % bound internal time step
       h = min([hs, tvals(tstep+1)-t]);   % stop at output times
