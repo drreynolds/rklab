@@ -70,6 +70,7 @@ if (test_exp_nonembed)
       [q,p,qs,lq,lp,tol] = check_rk(B,0,plotregions,box,mname,fname);
       fprintf(' %26s  | %2i | %2i  %2i  | %.0e\n', mname,s,q,lq,tol);
    end
+   fprintf('  --------------------------------------------------\n');
    fprintf('\n');
    
    % check whether reported and measured accuracies match
@@ -120,6 +121,7 @@ if (test_exp_embed)
       [q,p,qs,lq,lp,tol] = check_rk(B,0,plotregions,box,mname,fname);
       fprintf(' %26s  | %2i | %2i  %2i  | %2i  %2i       | %.0e\n', mname,s,q,lq,p,lp,tol);
    end
+   fprintf('  -----------------------------------------------------------------\n');
    fprintf('\n');
    
    % check whether reported and measured accuracies match
@@ -142,7 +144,6 @@ if (test_dirk_nonembed)
    %         {name,                        filename,              stability region bounding box}
    tests = {
              {'SSP2(2,2,2)-SDIRK',         'ssp2222_sdirk',       [-2,15,-10,10]},
-             {'SDIRK-2-2',                 'sdirk22',             [-5,15,-8,8]},
              {'Ascher(2,3,2)-SDIRK',       'a232_sdirk',          [-5,15,-10,10]},
              {'Ascher(2,2,2)-SDIRK',       'a222_sdirk',          [-5,15,-10,10]},
              {'ARK(2,3,2)-SDIRK',          'ark232_sdirk',        [-2,15,-10,10]},
@@ -162,8 +163,10 @@ if (test_dirk_nonembed)
              {'Ascher(4,4,3)-SDIRK',       'a443_sdirk',          [-2,10,-5,5]},
              {'Cooper4-ESDIRK',            'cooper4_esdirk',      [-2,15,-7,7]},
              {'DBM-5-3-ESDIRK',            'dbm53_esdirk',        [-1,9,-6,6]},
+             {'SDIRK4()5L[1]SA',           'sdirk45l_sdirk',      [-1,9,-6,6]},
+             {'SDIRK5()5L[1]',             'sdir55l_sdirk',       [-1,9,-6,6]},
              {'Cooper6-ESDIRK',            'cooper6_esdirk',      [-2,10,-6,6]},
-           };
+          };
    fprintf('\nDiagonally-implicit, non-embedded methods:\n\n');
    fprintf('            Name             |  s |  q  lq   A   B   L  |  qs  tol\n');
    fprintf('  ------------------------------------------------------------------\n');
@@ -173,7 +176,7 @@ if (test_dirk_nonembed)
       box = tests{i}{3};
       B = butcher(mname,use_symbolic);
       s = size(B,2)-1;
-      [q,p,qs,lq,lp,tol,Bs,As,Ls] = check_rk(B);
+      [q,p,qs,lq,lp,tol,Bs,As,Ls] = check_rk(B,0,plotregions,box,mname,fname);
       Bs_ = ' ';
       As_ = ' ';
       Ls_ = ' ';
@@ -188,6 +191,7 @@ if (test_dirk_nonembed)
       end
       fprintf(' %26s  | %2i | %2i  %2i   %s   %s   %s  | %2i  %.0e\n', mname,s,q,lq,As_,Bs_,Ls_,qs,tol);
    end
+   fprintf('  ------------------------------------------------------------------\n');
    fprintf('\n');
    
    % check whether reported and measured accuracies match
@@ -209,20 +213,30 @@ if (test_dirk_embed)
    %         {name,                        filename,              stability region bounding box}
    tests = {
              {'SDIRK-2-1',                 'sdirk21',             [0,6,-3,3]},
+             {'SDIRK-2-2',                 'sdirk22',             [-5,15,-8,8]},
              {'TRBDF2-ESDIRK',             'trbdf2_esdirk',       [-10,15,-8,8]},
              {'TRX2-ESDIRK',               'trx2_esdirk',         [-10,2,-8,8]},
              {'Billington-SDIRK',          'b_sdirk',             [-30,15,-15,15]},
              {'ARK3(2)4L[2]SA-ESDIRK',     'ark324_esdirk',       [0,9,-5,5]},
              {'Kvaerno(4,2,3)-ESDIRK',     'k423_esdirk',         [0,90,-50,50]},
+             {'ESDIRK3(2)5L[2]SA',         'esdirk35l',           [0,90,-50,50]},
+             {'ESDIRK3(2I)5L[2]SA',        'esdirk35il',          [0,90,-50,50]},
              {'SDIRK-5-4',                 'sdirk54',             [-15,25,-15,15]}
              {'Cash(5,3,4)-SDIRK',         'c534_sdirk',          [0,12,-5,5]},
              {'Kvaerno(5,3,4)-ESDIRK',     'k534_esdirk',         [0,40,-20,20]},
              {'Cash(5,2,4)-SDIRK',         'c524_sdirk',          [0,90,-50,50]},
+             {'ESDIRK4(3)6L[2]SA',         'esdirk46l',           [0,30,-20,20]},
+             {'ESDIRK4(3I)6L[2]SA',        'esdirk46il',          [0,30,-20,20]},
+             {'QESDIRK4(3)6L[2]SA',        'qesdirk66l',          [0,30,-20,20]},
              {'ARK4(3)6L[2]SA-ESDIRK',     'ark436_esdirk',       [0,30,-20,20]},
              {'ARK4(3)7L[2]SA-ESDIRK',     'ark437_esdirk',       [-5,80,-50,50]},
+             {'ESDIRK5(3)6L[2]SA',         'esdirk56l',           [-5,45,-25,25]},
+             {'ESDIRK5(4)7L[2]SA',         'esdirk57l',           [-5,45,-25,25]},
              {'ARK5(4)8L[2]SA-ESDIRK',     'ark548_esdirk',       [-5,45,-25,25]},
              {'ARK5(4)8L[2]SAb-ESDIRK',    'ark548b_esdirk',      [-5,30,-15,15]},
              {'Kvaerno(7,4,5)-ESDIRK',     'k745_esdirk',         [0,120,-60,60]},
+             {'ESDIRK5(4I)8L[2]SA',        'esdirk58il',          [0,120,-60,60]},
+             {'ESDIRK6(4)7A[2]',           'esdirk67',            [0,120,-60,60]},
            };
 
    fprintf('\nDiagonally-implicit, embedded methods:\n\n');
@@ -263,6 +277,7 @@ if (test_dirk_embed)
       fprintf(' %26s  | %2i | %2i  %2i   %s   %s   %s  | %2i  %2i   %s   %s   %s  | %2i  %.0e\n',...
               mname,s,q,lq,As_,Bs_,Ls_,p,lp,AsE_,BsE_,LsE_,qs,tol);
    end
+   fprintf('  ----------------------------------------------------------------------------------------\n');
    fprintf('\n');
    
    % check whether reported and measured accuracies match
@@ -336,6 +351,7 @@ if (test_irk)
       end
       fprintf(' %26s  | %2i | %2i  %2i   %s   %s   %s  | %2i  %.0e\n', mname,s,q,lq,As_,Bs_,Ls_,qs,tol);
    end
+   fprintf('  --------------------------------------------------------------------\n');
    fprintf('\n');
    
    % check whether reported and measured accuracies match

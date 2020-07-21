@@ -142,21 +142,24 @@ end
 
 % hone in on tightest tolerance where method and embedding order
 % are retained
-for testtol = 0.1.^(8:40)
-   [q_,lq_] = table_order(c,A,b,testtol,0);
-   qs_ = stage_order(c,A,tol);
-   if ((q_ < q) || (lq_ < lq) || (qs_ < qs))
-      break
-   end
-   if (embedded)
-      [p_,lp_] = table_order(c,A,d,testtol,0);
-      if ((p_ < p) || (lp_ < lp))
+if (q > 0)
+   for testtol = 0.1.^(8:40)
+      [q_,lq_] = table_order(c,A,b,testtol,0);
+      qs_ = stage_order(c,A,tol);
+      if ((q_ < q) || (lq_ < lq) || (qs_ < qs))
          break
       end
+      if (embedded)
+         [p_,lp_] = table_order(c,A,d,testtol,0);
+         if ((p_ < p) || (lp_ < lp))
+            break
+         end
+      end
+      tol = testtol;
    end
-   tol = testtol;
+else
+  tol = 1;
 end
-
 
 
 % generate plot of stability region
