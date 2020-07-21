@@ -335,7 +335,7 @@ elseif (strcmp(method_name,'ARK4(3)6L[2]SA-ESDIRK'))
 elseif (strcmp(method_name,'ESDIRK4(3)6L[2]SA'))
 
    c = [z; v(1)/v(2); (v(2)-sqrt(v(2)))/v(4); v(5)/v(8); v(26)/v(25); v(1)];
-   b = [(v(1181)-v(987)*sqrt(v(2)))/v(13782), (v(1181)-v(987)*sqrt(v(2)))/v(13782), v(47)*(-v(267)+v(1783)*sqrt(v(2)))/v(273343), -v(16)*(-v(22922)+v(3525)*sqrt(v(2)))/v(571953), -v(15625)(v(97)+v(376)*sqrt(v(2)))/v(90749876), v(1)/v(4)];
+   b = [(v(1181)-v(987)*sqrt(v(2)))/v(13782), (v(1181)-v(987)*sqrt(v(2)))/v(13782), v(47)*(-v(267)+v(1783)*sqrt(v(2)))/v(273343), -v(16)*(-v(22922)+v(3525)*sqrt(v(2)))/v(571953), -v(15625)*(v(97)+v(376)*sqrt(v(2)))/v(90749876), v(1)/v(4)];
    b2 = [-v(480923228411)/v(4982971448372), -v(480923228411)/v(4982971448372), v(6709447293961)/v(12833189095359), v(3513175791894)/v(6748737351361), -v(498863281070)/v(6042575550617), v(2077005547802)/v(8945017530137)];
    A = [z, z, z, z, z, z; ...
         v(1)/v(4), v(1)/v(4), z, z, z, z; ...
@@ -734,14 +734,14 @@ elseif (strcmp(method_name,'Ascher(2,2,2)-SDIRK'))
 
 elseif (strcmp(method_name,'Ascher(3,4,3)-ERK'))
 
-   gamma  = v(0.4358665215084590);
+   gamma  = v(0.4358665215084589994160194511935568425293);
    gamma2 = gamma^2;
 
    b1 = -v(1.5) * gamma2 + v(4) * gamma - v(0.25);
    b2 =  v(1.5) * gamma2 - v(5) * gamma + v(1.25);
 
-   a42 = v(0.5529291480359398);
-   a43 = v(0.5529291480359398);
+   a42 = v(0.5529291480359398193611887297385924764949);
+   a43 = v(0.5529291480359398193611887297385924764949);
 
    a31 = (v(1) - v(4.5) * gamma + v(1.5) * gamma2) * a42 ...
        + (v(2.75) - v(10.5) * gamma + v(3.75) * gamma2) * a43 ...
@@ -764,7 +764,7 @@ elseif (strcmp(method_name,'Ascher(3,4,3)-ERK'))
 
 elseif (strcmp(method_name,'Ascher(3,4,3)-SDIRK'))
 
-   gamma  = v(0.4358665215084590);
+   gamma  = v(0.4358665215084589994160194511935568425293);
    gamma2 = gamma^2;
 
    b1 = -v(1.5) * gamma2 + v(4) * gamma - v(0.25);
@@ -1049,7 +1049,7 @@ elseif (strcmp(method_name,'Kvaerno(7,4,5)-ESDIRK'))
    p = 4;
    B = [c, A; q, b; p, b2];
 
-elseif (strcmp(method_name,'ERK-1-1'))
+elseif (strcmp(method_name,'ERK-1-1'))   % explicit Euler
 
    A = [z];
    b = [v(1)];
@@ -1057,7 +1057,7 @@ elseif (strcmp(method_name,'ERK-1-1'))
    q = 1;
    B = [c, A; q, b];
 
-elseif (strcmp(method_name,'ERK-2-2'))
+elseif (strcmp(method_name,'ERK-2-2'))   % Ralston's method, doi: 10.1090/S0025-5718-1962-0150954-0
 
    A = [ z, z; v(2)/v(3), z];
    b = [ v(1)/v(4), v(3)/v(4)];
@@ -1817,6 +1817,8 @@ elseif (strcmp(method_name,'EDIRK-3-3'))
    % A = [ z,              z,                z;...
    %       4*gamma+2*beta, 1-4*gamma-2*beta, z;...
    %       1/2-beta-gamma, gamma,            beta];
+   %
+   % From: Section 3.2.3 of Conde et al., doi: 10.1007/s10915-017-0560-2
 
    beta  = v(2)/v(3);
    gamma = -v(1)/v(3);
@@ -1834,6 +1836,8 @@ elseif (strcmp(method_name,'ESDIRK-3-3'))
    % Pairs with SSPRK(3,3)-Shu-Osher-ERK to make 3rd order IMEX method
    %
    % In general gamma = (2*beta^2 - (3/2)*beta + 1/3)/(2-4*beta);
+   %
+   % From: Section 3.2.3 of Conde et al., doi: 10.1007/s10915-017-0560-2
 
    beta  = sqrt(v(3))/v(6) + v(1)/v(2);
    gamma = (-v(1)/v(8))*(sqrt(v(3))+v(1));
