@@ -569,7 +569,12 @@ function Amat = A_DIRK(z, Fdata)
    t  = Fdata.t + Fdata.h*c(st);
 
    % form the DIRK Jacobian
-   Amat = eye(length(z)) - Fdata.h*A(st,st)*Fdata.Jrhs(t, z);
+   J = Fdata.Jrhs(t, z);
+   if (issparse(J))
+      Amat = speye(length(z)) - Fdata.h*A(st,st)*J;
+   else
+      Amat = eye(length(z)) - Fdata.h*A(st,st)*J;
+   end
 
    % end of function
 end

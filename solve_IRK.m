@@ -502,11 +502,9 @@ function Amat = A_IRK(z, Fdata)
    z = reshape(z,nvar,s);
 
    % call J at each of our guesses
-   %J = zeros(nvar,nvar,s);
    J = cell(s);
    for is=1:s
       t = Fdata.t + Fdata.h*c(is);
-      %J(:,:,is) = Fdata.Jrhs(t, z(:,is));
       J{is} = Fdata.Jrhs(t, z(:,is));
    end
 
@@ -521,7 +519,6 @@ function Amat = A_IRK(z, Fdata)
    end
    for j=1:s
       for i=1:s
-         %Amat(nvar*(i-1)+1:nvar*i,nvar*(j-1)+1:nvar*j) = A(i,j)*J(:,:,j);
          Amat(nvar*(i-1)+1:nvar*i,nvar*(j-1)+1:nvar*j) = A(i,j)*J{j};
       end
    end
