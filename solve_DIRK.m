@@ -228,6 +228,8 @@ function [y,yerr,cfail,lits] = DIRKstep_embedded(fcn, Jfcn, y0, t0, h, B)
 
    % initialize storage for RHS vectors, outputs
    k = zeros(length(y0),s);
+   y = y0;
+   yerr = zeros(size(y0));
    lits = 0;
    cfail = 0;
 
@@ -319,6 +321,7 @@ function [y,cfail,lits] = DIRKstep_basic(fcn, Jfcn, y0, t0, h, B)
 
    % initialize storage for RHS vectors, outputs
    k = zeros(length(y0),s);
+   y = y0;
    lits = 0;
    cfail = 0;
 
@@ -410,6 +413,8 @@ function [y,yerr,cfail,lits] = DIRKstep_Richardson(fcn, Jfcn, y0, t0, h, B)
 
    % initialize storage for RHS vectors, outputs
    k = zeros(length(y0),s);
+   y = y0;
+   yerr = zeros(size(y));
    lits = 0;
    cfail = 0;
 
