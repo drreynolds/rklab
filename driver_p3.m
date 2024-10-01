@@ -225,10 +225,10 @@ function J = J_p3(t, y)
    v = y(m+1:2*m);
 
    % initialize Jacobian blocks terms
-   Juu = sparse([],[],[],m,m,3*m);
-   Juv = sparse([],[],[],m,m,m);
-   Jvu = sparse([],[],[],m,m,m);
-   Jvv = sparse([],[],[],m,m,3*m);
+   Juu = spalloc(m,m,3*m);
+   Juv = spalloc(m,m,m);
+   Jvu = spalloc(m,m,m);
+   Jvv = spalloc(m,m,3*m);
 
    % diffusion components
    for j=2:m-1
@@ -272,10 +272,10 @@ function J = Ji_p3(t, y)
    v = y(m+1:2*m);
 
    % initialize Jacobian blocks terms
-   Juu = sparse([],[],[],m,m,3*m);
-   Juv = sparse([],[],[],m,m,m);
-   Jvu = sparse([],[],[],m,m,m);
-   Jvv = sparse([],[],[],m,m,3*m);
+   Juu = spalloc(m,m,3*m);
+   Juv = spalloc(m,m,m);
+   Jvu = spalloc(m,m,m);
+   Jvv = spalloc(m,m,3*m);
 
    % diffusion components
    for j=2:m-1

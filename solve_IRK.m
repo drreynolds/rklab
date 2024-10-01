@@ -194,6 +194,7 @@ end  % time step loop
 end
 
 
+
 %------------------------- Utility routines -------------------------%
 
 
@@ -501,20 +502,31 @@ function Amat = A_IRK(z, Fdata)
    z = reshape(z,nvar,s);
 
    % call J at each of our guesses
-   J = zeros(nvar,nvar,s);
+   J = cell(s);
    for is=1:s
       t = Fdata.t + Fdata.h*c(is);
-      J(:,:,is) = Fdata.Jrhs(t, z(:,is));
+      J{is} = Fdata.Jrhs(t, z(:,is));
    end
 
+   % set flag on whether Jacobian is sparse
+   spJac = issparse(J{1});
+
    % form the IRK Jacobian
-   Amat = zeros(nvar*s);
+   if (spJac)
+      Amat = spalloc(nvar*s, nvar*s, nvar*s+s*s*nzmax(J{1}));
+   else
+      Amat = zeros(nvar*s);
+   end
    for j=1:s
       for i=1:s
-         Amat(nvar*(i-1)+1:nvar*i,nvar*(j-1)+1:nvar*j) = A(i,j)*J(:,:,j);
+         Amat(nvar*(i-1)+1:nvar*i,nvar*(j-1)+1:nvar*j) = A(i,j)*J{j};
       end
    end
-   Amat = eye(nvar*s) - Fdata.h*Amat;
+   if (spJac)
+      Amat = speye(nvar*s) - Fdata.h*Amat;
+   else
+      Amat = eye(nvar*s) - Fdata.h*Amat;
+   end
 
 % end of function
 end

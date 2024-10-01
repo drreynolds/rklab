@@ -44,7 +44,7 @@ if (test_exp_nonembed)
              {'Knoth-Wolke-ERK',           'kw_erk',              [-3,0.5,-3,3]},
              {'SSP3(3,3,2)-ERK',           'ssp3332_erk',         [-3,0.5,-3,3]},
              {'SSP3(3,3,3)-ERK',           'ssp3333_erk',         [-3,1,-3,3]},
-             {'SSPRK(3,3)-Shu-Osher-ERK',  'ssprk33so_erk',       [-3,0.5,-3,3]} 
+             {'SSPRK(3,3)-Shu-Osher-ERK',  'ssprk33so_erk',       [-3,0.5,-3,3]}
              {'Ascher(3,4,3)-ERK',         'a343_erk',            [-3,0.5,-4,4]},
              {'Cooper4-ERK',               'cooper4_erk',         [-3,0.5,-3,3]},
              {'SSP3(4,3,3)-ERK',           'ssp3433_erk',         [-3,0.5,-3,3]},
@@ -72,7 +72,7 @@ if (test_exp_nonembed)
    end
    fprintf('  --------------------------------------------------\n');
    fprintf('\n');
-   
+
    % check whether reported and measured accuracies match
    for i = 1:length(tests)
       mname = tests{i}{1};
@@ -83,7 +83,7 @@ if (test_exp_nonembed)
          fprintf('  Warning: %26s has mismatched orders (%i vs %i)\n', mname, q, B(s+1,1));
       end
    end
-   
+
 end
 
 
@@ -106,7 +106,7 @@ if (test_exp_embed)
              {'ARK5(4)8L[2]SA-ERK',        'ark548_erk',          [-15,5,-10,10]},
              {'ARK5(4)8L[2]SAb-ERK',       'ark548b_erk',         [-5,1,-4,4]},
              {'Verner-6-5-ERK',            'v65_erk',             [-10,10,-10,10]},
-             {'Fehlberg-8-7-ERK',          'f87_erk',             [-10,10,-10,10]} 
+             {'Fehlberg-8-7-ERK',          'f87_erk',             [-10,10,-10,10]}
            };
    fprintf('\nExplicit, embedded methods:\n\n');
    fprintf('                             |    |  Method |  Embedding  |\n');
@@ -123,7 +123,7 @@ if (test_exp_embed)
    end
    fprintf('  -----------------------------------------------------------------\n');
    fprintf('\n');
-   
+
    % check whether reported and measured accuracies match
    for i = 1:length(tests)
       mname = tests{i}{1};
@@ -135,7 +135,7 @@ if (test_exp_embed)
                  mname, q, p, B(s+1,1), B(s+2,1));
       end
    end
-   
+
 end
 
 
@@ -157,7 +157,7 @@ if (test_dirk_nonembed)
              {'Ascher(2,3,3)-SDIRK',       'a233_sdirk',          [-5,15,-10,10]},
              {'SSP3(3,3,3)-ESDIRK',        'ssp3333_esdirk',      [-4,1,-3,3]},
              {'EDIRK-3-3',                 'edirk33',             [-2,15,-8,8]},
-             {'ESDIRK-3-3',                'esdirk33',            [-2,15,-8,8]} 
+             {'ESDIRK-3-3',                'esdirk33',            [-2,15,-8,8]}
              {'SSP3(4,3,3)-SDIRK',         'ssp3433_sdirk',       [-5,25,-15,15]},
              {'Ascher(3,4,3)-SDIRK',       'a343_sdirk',          [-5,10,-6,6]},
              {'Ascher(4,4,3)-SDIRK',       'a443_sdirk',          [-2,10,-5,5]},
@@ -193,7 +193,7 @@ if (test_dirk_nonembed)
    end
    fprintf('  ------------------------------------------------------------------\n');
    fprintf('\n');
-   
+
    % check whether reported and measured accuracies match
    for i = 1:length(tests)
       mname = tests{i}{1};
@@ -204,7 +204,7 @@ if (test_dirk_nonembed)
          fprintf('  Warning: %26s has mismatched orders (%i vs %i)\n', mname, q, B(s+1,1));
       end
    end
-   
+
 end
 
 
@@ -219,24 +219,29 @@ if (test_dirk_embed)
              {'Billington-SDIRK',          'b_sdirk',             [-30,15,-15,15]},
              {'ARK3(2)4L[2]SA-ESDIRK',     'ark324_esdirk',       [0,9,-5,5]},
              {'Kvaerno(4,2,3)-ESDIRK',     'k423_esdirk',         [0,90,-50,50]},
-             {'ESDIRK3(2)5L[2]SA',         'esdirk35l',           [0,90,-50,50]},
-             {'ESDIRK3(2I)5L[2]SA',        'esdirk35il',          [0,90,-50,50]},
+             {'ESDIRK3(2)4L[2]SA',         'esdirk34l',           [-5,90,-50,50]},
+             {'ESDIRK3(2)5L[2]SA',         'esdirk35l',           [-5,90,-50,50]},
+             {'ESDIRK3(2I)5L[2]SA',        'esdirk35il',          [-5,90,-50,50]},
              {'SDIRK-5-4',                 'sdirk54',             [-15,25,-15,15]}
-             {'Cash(5,3,4)-SDIRK',         'c534_sdirk',          [0,12,-5,5]},
-             {'Kvaerno(5,3,4)-ESDIRK',     'k534_esdirk',         [0,40,-20,20]},
-             {'Cash(5,2,4)-SDIRK',         'c524_sdirk',          [0,90,-50,50]},
-             {'ESDIRK4(3)6L[2]SA',         'esdirk46l',           [0,30,-20,20]},
-             {'ESDIRK4(3I)6L[2]SA',        'esdirk46il',          [0,30,-20,20]},
-             {'QESDIRK4(3)6L[2]SA',        'qesdirk66l',          [0,30,-20,20]},
-             {'ARK4(3)6L[2]SA-ESDIRK',     'ark436_esdirk',       [0,30,-20,20]},
+             {'Cash(5,3,4)-SDIRK',         'c534_sdirk',          [-5,12,-5,5]},
+             {'Kvaerno(5,3,4)-ESDIRK',     'k534_esdirk',         [-5,40,-20,20]},
+             {'Cash(5,2,4)-SDIRK',         'c524_sdirk',          [-5,90,-50,50]},
+             {'ESDIRK4(3)6L[2]SA',         'esdirk46l',           [-5,30,-20,20]},
+             {'ESDIRK4(3I)6L[2]SA',        'esdirk46il',          [-5,30,-20,20]},
+             {'ESDIRK4(3)7L[2]SA',         'esdirk47l',           [-5,30,-20,20]},
+             {'QESDIRK4(3)6L[2]SA',        'qesdirk46l',          [-5,30,-20,20]},
+             {'ARK4(3)6L[2]SA-ESDIRK',     'ark436_esdirk',       [-5,30,-20,20]},
              {'ARK4(3)7L[2]SA-ESDIRK',     'ark437_esdirk',       [-5,80,-50,50]},
              {'ESDIRK5(3)6L[2]SA',         'esdirk56l',           [-5,45,-25,25]},
              {'ESDIRK5(4)7L[2]SA',         'esdirk57l',           [-5,45,-25,25]},
+             {'ESDIRK5(4)7L[2]SA2',        'esdirk57l2',          [-5,45,-25,25]},
+             {'ESDIRK5(4)8L[2]SA',         'esdirk58l',           [-5,45,-25,25]},
              {'ARK5(4)8L[2]SA-ESDIRK',     'ark548_esdirk',       [-5,45,-25,25]},
              {'ARK5(4)8L[2]SAb-ESDIRK',    'ark548b_esdirk',      [-5,30,-15,15]},
-             {'Kvaerno(7,4,5)-ESDIRK',     'k745_esdirk',         [0,120,-60,60]},
-             {'ESDIRK5(4I)8L[2]SA',        'esdirk58il',          [0,120,-60,60]},
-             {'ESDIRK6(4)7A[2]',           'esdirk67',            [0,120,-60,60]},
+             {'Kvaerno(7,4,5)-ESDIRK',     'k745_esdirk',         [-5,120,-60,60]},
+             {'ESDIRK5(4I)8L[2]SA',        'esdirk58il',          [-5,120,-60,60]},
+             {'ESDIRK6(4)7A[2]',           'esdirk67',            [-5,120,-60,60]},
+             {'ESDIRK6(5)9L[2]SA',         'esdirk69',            [-5,120,-60,60]},
            };
 
    fprintf('\nDiagonally-implicit, embedded methods:\n\n');
@@ -279,7 +284,7 @@ if (test_dirk_embed)
    end
    fprintf('  ----------------------------------------------------------------------------------------\n');
    fprintf('\n');
-   
+
    % check whether reported and measured accuracies match
    for i = 1:length(tests)
       mname = tests{i}{1};
@@ -301,7 +306,7 @@ if (test_irk)
    tests = {
              {'IRK-1-1',                   'irk11',               [-0.5,2.5,-1.5,1.5]},
              {'LobattoIIIC-2-2-IRK',       'liiic22_irk',         [-1,3,-3,3]},
-             {'Crank-Nicolson-2-2-IRK',    'cn22_irk',            [-5,5,-5,5]},      
+             {'Crank-Nicolson-2-2-IRK',    'cn22_irk',            [-5,5,-5,5]},
              {'SIRK-2-2',                  'sirk22',              [-5,15,-8,8]},
              {'LobattoIIIA-2-2-IRK',       'liiia22_irk',         [-5,5,-5,5]},
              {'LobattoIII-2-2-IRK',        'liii22_irk',          [-3,1,-3,3]},
@@ -325,7 +330,7 @@ if (test_irk)
              {'LobattoIIIB-5-8-IRK',       'liiib58_irk',         [-5,5,-5,5]},
              {'LobattoIII-5-8-IRK',        'liii58_irk',          [-20,2,-12,12]},
              {'RadauIIA-5-9-IRK',          'riia59_irk',          [-5,30,-20,20]},
-             {'Gauss-6-12-IRK',            'g612_irk',            [-5,5,-5,5]} 
+             {'Gauss-6-12-IRK',            'g612_irk',            [-5,5,-5,5]}
            };
    fprintf('\nFully-implicit, non-embedded methods:\n\n');
    fprintf('            Name             |  s |  q  lq   A   B   L  |  qs  tol\n');
@@ -353,7 +358,7 @@ if (test_irk)
    end
    fprintf('  --------------------------------------------------------------------\n');
    fprintf('\n');
-   
+
    % check whether reported and measured accuracies match
    for i = 1:length(tests)
       mname = tests{i}{1};
