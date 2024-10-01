@@ -92,9 +92,16 @@ if (test_exp_embed)
    %         {name,                        filename,              stability region bounding box}
    tests = {
              {'Heun-Euler-ERK',            'he_erk',              [-2.5,0.5,-2,2]},
+             {'SSP(2,2)-ERK',              'ssp_2_2',             [-6,1,-3,3]},
+             {'SSP(4,2)-ERK',              'ssp_4_2',             [-8,1,-4,4]},
+             {'SSP(10,2)-ERK',             'ssp_10_2',            [-20,2,-10,10]},
              {'ERK-3-3',                   'erk33',               [-3,0.5,-3,3]},
+             {'SSP(4,3)-ERK',              'ssp_4_3',             [-10,2,-4,4]},
+             {'SSP(9,3)-ERK',              'ssp_9_3',             [-16,2,-8,8]},
+             {'SSP(16,3)-ERK',             'ssp_16_3',            [-30,2,-15,15]},
              {'ARK3(2)4L[2]SA-ERK',        'ark324_erk',          [-4,0.5,-4,4]},
              {'Bogacki-Shampine-ERK',      'bs_erk',              [-3.5,0.5,-3,3]},
+             {'SSP(10,4)-ERK',             'ssp_10_4',            [-16,2,-10,10]},
              {'Merson-4-3-ERK',            'm43_erk',             [-4,1,-4,4]},
              {'Zonneveld-4-3-ERK',         'z43_erk',             [-3,0.5,-3,3]},
              {'ARK4(3)6L[2]SA-ERK',        'ark436_erk',          [-5,1,-5,5]},
