@@ -1,9 +1,9 @@
 function [qE,qI,q,pE,pI,p,qsE,qsI,qsA] = check_ark_embedded(cE,cI,AE,AI,bE,bI,dE,dI,tol,reportL,doPlot,box,mname,fname)
 % Usage: [qE,qI,q,pE,pI,p,qsE,qsI,qsA] = check_ark_embedded(cE,cI,AE,AI,bE,bI,dE,dI,tol,reportL,doPlot,box,mname,fname)
-% 
+%
 % Checks the pair of Butcher tables given by
 %
-%    cE | AE     cI | AI 
+%    cE | AE     cI | AI
 %    --------    --------
 %       | bE        | bI
 %       | dE        | dI
@@ -15,8 +15,8 @@ function [qE,qI,q,pE,pI,p,qsE,qsI,qsA] = check_ark_embedded(cE,cI,AE,AI,bE,bI,dE
 % article Sandu & Gunther, SINUM 53, 2015.
 %
 % We also compute the 'stage order' of the ERK, DIRK and ARK methods,
-% respectively, through checking the Butcher simplifying assumption C(q) 
-% as prescribed in the article 
+% respectively, through checking the Butcher simplifying assumption C(q)
+% as prescribed in the article
 % J.C. Butcher, "Implicit Runge-Kutta processes", Math Comp 18 (1964), pp 50-64.
 %
 % Inputs:
@@ -128,7 +128,7 @@ end
 if (~failI)
    qI = max(qI,0);
 end
-   
+
 % check for first order
 if (~failed || ~failE || ~failI)
    tst = sum(bE)-1;
@@ -139,14 +139,14 @@ if (~failed || ~failE || ~failI)
          fprintf('    ERK method fails 1st order condition (tst = %g)\n', tst);
       end
    end
-   
+
    tst = sum(bI)-1;
    if (abs(tst) > tol)
       failed = true;
       failI = true;
       if (reportL>1)
          fprintf('    DIRK method fails 1st order condition (tst = %g)\n', tst);
-      end      
+      end
    end
       if (reportL>1)
          if (~failE), fprintf('  ERK method passes order 1 conditions\n'); end
@@ -164,15 +164,15 @@ if (~failed || ~failE || ~failI)
 end
 
 % check for second order
-if (~failed || ~failE || ~failI) 
-   
+if (~failed || ~failE || ~failI)
+
    tst = bE'*cE - 0.5;
    if (abs(tst) > tol)
       failed = true;
       failE = true;
       if (reportL>1)
          fprintf('    ERK method fails 2nd order condition (tst = %g)\n', tst);
-      end      
+      end
    end
 
    tst = bI'*cI - 0.5;
@@ -181,7 +181,7 @@ if (~failed || ~failE || ~failI)
       failI = true;
       if (reportL>1)
          fprintf('    DIRK method fails 2nd order condition (tst = %g)\n', tst);
-      end      
+      end
    end
 
    tst = bE'*cI - 0.5;
@@ -190,7 +190,7 @@ if (~failed || ~failE || ~failI)
       failC = true;
       if (reportL>1)
          fprintf('    ARK method fails 2nd order coupling condition A1 (tst = %g)\n', tst);
-      end      
+      end
    end
 
    tst = bI'*cE - 0.5;
@@ -199,7 +199,7 @@ if (~failed || ~failE || ~failI)
       failC = true;
       if (reportL>1)
          fprintf('    ARK method fails 2nd order coupling condition A2 (tst = %g)\n', tst);
-      end      
+      end
    end
 
    if (reportL>1)
@@ -220,15 +220,15 @@ end
 
 
 % check for third order
-if (~failed || ~failE || ~failI) 
-   
+if (~failed || ~failE || ~failI)
+
    tst = bE'*(cE.*cE) - (1/3);
    if (abs(tst) > tol)
       failed = true;
       failE = true;
       if (reportL>1)
          fprintf('    ERK method fails 3nd order condition A (tst = %g)\n', tst);
-      end      
+      end
    end
 
    tst = bI'*(cI.*cI) - (1/3);
@@ -237,7 +237,7 @@ if (~failed || ~failE || ~failI)
       failI = true;
       if (reportL>1)
          fprintf('    DIRK method fails 3rd order condition A (tst = %g)\n', tst);
-      end      
+      end
    end
 
    tst = bE'*(AE*cE) - (1/6);
@@ -246,7 +246,7 @@ if (~failed || ~failE || ~failI)
       failE = true;
       if (reportL>1)
          fprintf('    ERK method fails 3nd order condition B (tst = %g)\n', tst);
-      end      
+      end
    end
 
    tst = bI'*(AI*cI) - (1/6);
@@ -255,7 +255,7 @@ if (~failed || ~failE || ~failI)
       failI = true;
       if (reportL>1)
          fprintf('    DIRK method fails 3nd order condition B (tst = %g)\n', tst);
-      end      
+      end
    end
 
    counter=0;
@@ -318,15 +318,15 @@ end
 
 
 % check for fourth order
-if (~failed || ~failE || ~failI) 
-   
+if (~failed || ~failE || ~failI)
+
    tst = bE'*(cE.*cE.*cE) - (1/4);
    if (abs(tst) > tol)
       failed = true;
       failE = true;
       if (reportL>1)
          fprintf('    ERK method fails 4th order condition A (tst = %g)\n', tst);
-      end      
+      end
    end
 
    tst = bI'*(cI.*cI.*cI) - (1/4);
@@ -335,7 +335,7 @@ if (~failed || ~failE || ~failI)
       failI = true;
       if (reportL>1)
          fprintf('    DIRK method fails 4th order condition A (tst = %g)\n', tst);
-      end      
+      end
    end
 
    tst = (bE.*cE)'*(AE*cE) - (1/8);
@@ -344,7 +344,7 @@ if (~failed || ~failE || ~failI)
       failE = true;
       if (reportL>1)
          fprintf('    ERK method fails 4th order condition B (tst = %g)\n', tst);
-      end      
+      end
    end
 
    tst = (bI.*cI)'*(AI*cI) - (1/8);
@@ -353,7 +353,7 @@ if (~failed || ~failE || ~failI)
       failI = true;
       if (reportL>1)
          fprintf('    DIRK method fails 4th order condition B (tst = %g)\n', tst);
-      end      
+      end
    end
 
    tst = bE'*AE*(cE.*cE) - (1/12);
@@ -362,7 +362,7 @@ if (~failed || ~failE || ~failI)
       failE = true;
       if (reportL>1)
          fprintf('    ERK method fails 4th order condition C (tst = %g)\n', tst);
-      end      
+      end
    end
 
    tst = bI'*AI*(cI.*cI) - (1/12);
@@ -371,7 +371,7 @@ if (~failed || ~failE || ~failI)
       failI = true;
       if (reportL>1)
          fprintf('    DIRK method fails 4th order condition C (tst = %g)\n', tst);
-      end      
+      end
    end
 
    tst = bE'*AE*AE*cE - (1/24);
@@ -380,7 +380,7 @@ if (~failed || ~failE || ~failI)
       failE = true;
       if (reportL>1)
          fprintf('    ERK method fails 4th order condition D (tst = %g)\n', tst);
-      end      
+      end
    end
 
    tst = bI'*AI*AI*cI - (1/24);
@@ -389,7 +389,7 @@ if (~failed || ~failE || ~failI)
       failI = true;
       if (reportL>1)
          fprintf('    DIRK method fails 4th order condition D (tst = %g)\n', tst);
-      end      
+      end
    end
 
    counter=0;
@@ -483,7 +483,7 @@ if (~failed || ~failE || ~failI)
          end
       end
    end
-   
+
    if (reportL>1)
       if (~failE),  fprintf('  ERK method passes order 4 conditions\n'); end
       if (~failI),  fprintf('  DIRK method passes order 4 conditions\n'); end
@@ -504,15 +504,15 @@ end
 
 
 % check for fifth order
-if (~failed || ~failE || ~failI) 
-   
+if (~failed || ~failE || ~failI)
+
    tst = bE'*(cE.*cE.*cE.*cE) - (1/5);
    if (abs(tst) > tol)
       failed = true;
       failE = true;
       if (reportL>1)
          fprintf('    ERK method fails 5th order condition A (tst = %g)\n', tst);
-      end      
+      end
    end
 
    tst = bI'*(cI.*cI.*cI.*cI) - (1/5);
@@ -521,7 +521,7 @@ if (~failed || ~failE || ~failI)
       failI = true;
       if (reportL>1)
          fprintf('    DIRK method fails 5th order condition A (tst = %g)\n', tst);
-      end      
+      end
    end
 
    tst = (bE.*cE.*cE)'*(AE*cE) - (1/10);
@@ -530,7 +530,7 @@ if (~failed || ~failE || ~failI)
       failE = true;
       if (reportL>1)
          fprintf('    ERK method fails 5th order condition B (tst = %g)\n', tst);
-      end      
+      end
    end
 
    tst = (bI.*cI.*cI)'*(AI*cI) - (1/10);
@@ -539,7 +539,7 @@ if (~failed || ~failE || ~failI)
       failI = true;
       if (reportL>1)
          fprintf('    DIRK method fails 5th order condition B (tst = %g)\n', tst);
-      end      
+      end
    end
 
    tst = bE'*((AE*cE).*(AE*cE)) - (1/20);
@@ -548,7 +548,7 @@ if (~failed || ~failE || ~failI)
       failE = true;
       if (reportL>1)
          fprintf('    ERK method fails 5th order condition C (tst = %g)\n', tst);
-      end      
+      end
    end
 
    tst = bI'*((AI*cI).*(AI*cI)) - (1/20);
@@ -557,7 +557,7 @@ if (~failed || ~failE || ~failI)
       failE = true;
       if (reportL>1)
          fprintf('    DIRK method fails 5th order condition C (tst = %g)\n', tst);
-      end      
+      end
    end
 
    tst = (bE.*cE)'*AE*(cE.*cE) - (1/15);
@@ -566,7 +566,7 @@ if (~failed || ~failE || ~failI)
       failE = true;
       if (reportL>1)
          fprintf('    ERK method fails 5th order condition D (tst = %g)\n', tst);
-      end      
+      end
    end
 
    tst = (bI.*cI)'*AI*(cI.*cI) - (1/15);
@@ -575,7 +575,7 @@ if (~failed || ~failE || ~failI)
       failI = true;
       if (reportL>1)
          fprintf('    DIRK method fails 5th order condition D (tst = %g)\n', tst);
-      end      
+      end
    end
 
    tst = bE'*AE*(cE.*cE.*cE) - (1/20);
@@ -584,7 +584,7 @@ if (~failed || ~failE || ~failI)
       failE = true;
       if (reportL>1)
          fprintf('    ERK method fails 5th order condition E (tst = %g)\n', tst);
-      end      
+      end
    end
 
    tst = bI'*AI*(cI.*cI.*cI) - (1/20);
@@ -593,7 +593,7 @@ if (~failed || ~failE || ~failI)
       failE = true;
       if (reportL>1)
          fprintf('    DIRK method fails 5th order condition E (tst = %g)\n', tst);
-      end      
+      end
    end
 
    tst = (bE.*cE)'*AE*AE*cE - (1/30);
@@ -602,7 +602,7 @@ if (~failed || ~failE || ~failI)
       failE = true;
       if (reportL>1)
          fprintf('    ERK method fails 5th order condition F (tst = %g)\n', tst);
-      end      
+      end
    end
 
    tst = (bI.*cI)'*AI*AI*cI - (1/30);
@@ -611,7 +611,7 @@ if (~failed || ~failE || ~failI)
       failE = true;
       if (reportL>1)
          fprintf('    DIRK method fails 5th order condition F (tst = %g)\n', tst);
-      end      
+      end
    end
 
    tst = -(1/40);
@@ -627,7 +627,7 @@ if (~failed || ~failE || ~failI)
       failE = true;
       if (reportL>1)
          fprintf('    ERK method fails 5th order condition G (tst = %g)\n', tst);
-      end      
+      end
    end
 
    tst = -(1/40);
@@ -643,7 +643,7 @@ if (~failed || ~failE || ~failI)
       failE = true;
       if (reportL>1)
          fprintf('    DIRK method fails 5th order condition G (tst = %g)\n', tst);
-      end      
+      end
    end
 
    tst = bE'*AE*AE*(cE.*cE) - (1/60);
@@ -652,7 +652,7 @@ if (~failed || ~failE || ~failI)
       failE = true;
       if (reportL>1)
          fprintf('    ERK method fails 5th order condition H (tst = %g)\n', tst);
-      end      
+      end
    end
 
    tst = bI'*AI*AI*(cI.*cI) - (1/60);
@@ -661,7 +661,7 @@ if (~failed || ~failE || ~failI)
       failE = true;
       if (reportL>1)
          fprintf('    DIRK method fails 5th order condition H (tst = %g)\n', tst);
-      end      
+      end
    end
 
    tst = bE'*AE*AE*AE*cE - (1/120);
@@ -670,7 +670,7 @@ if (~failed || ~failE || ~failI)
       failE = true;
       if (reportL>1)
          fprintf('    ERK method fails 5th order condition I (tst = %g)\n', tst);
-      end      
+      end
    end
 
    tst = bI'*AI*AI*AI*cI - (1/120);
@@ -679,7 +679,7 @@ if (~failed || ~failE || ~failI)
       failE = true;
       if (reportL>1)
          fprintf('    DIRK method fails 5th order condition I (tst = %g)\n', tst);
-      end      
+      end
    end
 
    counter=0;
@@ -923,7 +923,7 @@ if (~failed || ~failE || ~failI)
       end
    end
 
-  
+
    if (reportL>1)
       if (~failE),  fprintf('  ERK method passes order 5 conditions\n'); end
       if (~failI),  fprintf('  DIRK method passes order 5 conditions\n'); end
@@ -944,15 +944,15 @@ end
 
 
 % check for sixth order
-if (~failed || ~failE || ~failI) 
-   
+if (~failed || ~failE || ~failI)
+
    tst = bE'*(cE.*cE.*cE.*cE.*cE) - (1/6);
    if (abs(tst) > tol)
       failed = true;
       failE = true;
       if (reportL>1)
          fprintf('    ERK method fails 6th order condition A (tst = %g)\n', tst);
-      end      
+      end
    end
 
    tst = bI'*(cI.*cI.*cI.*cI.*cI) - (1/6);
@@ -961,7 +961,7 @@ if (~failed || ~failE || ~failI)
       failI = true;
       if (reportL>1)
          fprintf('    DIRK method fails 6th order condition A (tst = %g)\n', tst);
-      end      
+      end
    end
 
    tst = (bE.*cE.*cE.*cE)'*AE*cE - (1/12);
@@ -970,7 +970,7 @@ if (~failed || ~failE || ~failI)
       failE = true;
       if (reportL>1)
          fprintf('    ERK method fails 6th order condition B (tst = %g)\n', tst);
-      end      
+      end
    end
 
    tst = (bI.*cI.*cI.*cI)'*AI*cI - (1/12);
@@ -979,7 +979,7 @@ if (~failed || ~failE || ~failI)
       failI = true;
       if (reportL>1)
          fprintf('    DIRK method fails 6th order condition B (tst = %g)\n', tst);
-      end      
+      end
    end
 
    tst = -(1/24);
@@ -995,7 +995,7 @@ if (~failed || ~failE || ~failI)
       failE = true;
       if (reportL>1)
          fprintf('    ERK method fails 6th order condition C (tst = %g)\n', tst);
-      end      
+      end
    end
 
    tst = -(1/24);
@@ -1011,7 +1011,7 @@ if (~failed || ~failE || ~failI)
       failI = true;
       if (reportL>1)
          fprintf('    DIRK method fails 6th order condition C (tst = %g)\n', tst);
-      end      
+      end
    end
 
    tst = (bE.*cE.*cE)'*AE*(cE.*cE) - (1/18);
@@ -1020,7 +1020,7 @@ if (~failed || ~failE || ~failI)
       failE = true;
       if (reportL>1)
          fprintf('    ERK method fails 6th order condition D (tst = %g)\n', tst);
-      end      
+      end
    end
 
    tst = (bI.*cI.*cI)'*AI*(cI.*cI) - (1/18);
@@ -1029,7 +1029,7 @@ if (~failed || ~failE || ~failI)
       failI = true;
       if (reportL>1)
          fprintf('    DIRK method fails 6th order condition D (tst = %g)\n', tst);
-      end      
+      end
    end
 
    tst = -(1/36);
@@ -1045,7 +1045,7 @@ if (~failed || ~failE || ~failI)
       failE = true;
       if (reportL>1)
          fprintf('    ERK method fails 6th order condition E (tst = %g)\n', tst);
-      end      
+      end
    end
 
    tst = -(1/36);
@@ -1061,7 +1061,7 @@ if (~failed || ~failE || ~failI)
       failI = true;
       if (reportL>1)
          fprintf('    DIRK method fails 6th order condition E (tst = %g)\n', tst);
-      end      
+      end
    end
 
    tst = (bE.*cE)'*AE*(cE.*cE.*cE) - (1/24);
@@ -1070,7 +1070,7 @@ if (~failed || ~failE || ~failI)
       failE = true;
       if (reportL>1)
          fprintf('    ERK method fails 6th order condition F (tst = %g)\n', tst);
-      end      
+      end
    end
 
    tst = (bI.*cI)'*AI*(cI.*cI.*cI) - (1/24);
@@ -1079,7 +1079,7 @@ if (~failed || ~failE || ~failI)
       failI = true;
       if (reportL>1)
          fprintf('    DIRK method fails 6th order condition F (tst = %g)\n', tst);
-      end      
+      end
    end
 
    tst = bE'*AE*(cE.*cE.*cE.*cE) - (1/30);
@@ -1088,7 +1088,7 @@ if (~failed || ~failE || ~failI)
       failE = true;
       if (reportL>1)
          fprintf('    ERK method fails 6th order condition G (tst = %g)\n', tst);
-      end      
+      end
    end
 
    tst = bI'*AI*(cI.*cI.*cI.*cI) - (1/30);
@@ -1097,7 +1097,7 @@ if (~failed || ~failE || ~failI)
       failI = true;
       if (reportL>1)
          fprintf('    DIRK method fails 6th order condition G (tst = %g)\n', tst);
-      end      
+      end
    end
 
    tst = (bE.*cE.*cE)'*AE*AE*cE - (1/36);
@@ -1106,7 +1106,7 @@ if (~failed || ~failE || ~failI)
       failE = true;
       if (reportL>1)
          fprintf('    ERK method fails 6th order condition H (tst = %g)\n', tst);
-      end      
+      end
    end
 
    tst = (bI.*cI.*cI)'*AI*AI*cI - (1/36);
@@ -1115,7 +1115,7 @@ if (~failed || ~failE || ~failI)
       failI = true;
       if (reportL>1)
          fprintf('    DIRK method fails 6th order condition H (tst = %g)\n', tst);
-      end      
+      end
    end
 
    tst = -(1/72);
@@ -1133,7 +1133,7 @@ if (~failed || ~failE || ~failI)
       failE = true;
       if (reportL>1)
          fprintf('    ERK method fails 6th order condition I (tst = %g)\n', tst);
-      end      
+      end
    end
 
    tst = -(1/72);
@@ -1151,7 +1151,7 @@ if (~failed || ~failE || ~failI)
       failI = true;
       if (reportL>1)
          fprintf('    DIRK method fails 6th order condition I (tst = %g)\n', tst);
-      end      
+      end
    end
 
    tst = -(1/48);
@@ -1167,7 +1167,7 @@ if (~failed || ~failE || ~failI)
       failE = true;
       if (reportL>1)
          fprintf('    ERK method fails 6th order condition J (tst = %g)\n', tst);
-      end      
+      end
    end
 
    tst = -(1/48);
@@ -1183,7 +1183,7 @@ if (~failed || ~failE || ~failI)
       failI = true;
       if (reportL>1)
          fprintf('    DIRK method fails 6th order condition J (tst = %g)\n', tst);
-      end      
+      end
    end
 
    tst = -(1/60);
@@ -1199,7 +1199,7 @@ if (~failed || ~failE || ~failI)
       failE = true;
       if (reportL>1)
          fprintf('    ERK method fails 6th order condition K (tst = %g)\n', tst);
-      end      
+      end
    end
 
    tst = -(1/60);
@@ -1215,7 +1215,7 @@ if (~failed || ~failE || ~failI)
       failI = true;
       if (reportL>1)
          fprintf('    DIRK method fails 6th order condition K (tst = %g)\n', tst);
-      end      
+      end
    end
 
    tst = -(1/120);
@@ -1233,7 +1233,7 @@ if (~failed || ~failE || ~failI)
       failE = true;
       if (reportL>1)
          fprintf('    ERK method fails 6th order condition L (tst = %g)\n', tst);
-      end      
+      end
    end
 
    tst = -(1/120);
@@ -1251,7 +1251,7 @@ if (~failed || ~failE || ~failI)
       failI = true;
       if (reportL>1)
          fprintf('    DIRK method fails 6th order condition L (tst = %g)\n', tst);
-      end      
+      end
    end
 
    tst = (bE.*cE)'*AE*AE*(cE.*cE) - (1/72);
@@ -1260,7 +1260,7 @@ if (~failed || ~failE || ~failI)
       failE = true;
       if (reportL>1)
          fprintf('    ERK method fails 6th order condition M (tst = %g)\n', tst);
-      end      
+      end
    end
 
    tst = (bI.*cI)'*AI*AI*(cI.*cI) - (1/72);
@@ -1269,7 +1269,7 @@ if (~failed || ~failE || ~failI)
       failI = true;
       if (reportL>1)
          fprintf('    DIRK method fails 6th order condition M (tst = %g)\n', tst);
-      end      
+      end
    end
 
    tst = -(1/90);
@@ -1285,7 +1285,7 @@ if (~failed || ~failE || ~failI)
       failE = true;
       if (reportL>1)
          fprintf('    ERK method fails 6th order condition N (tst = %g)\n', tst);
-      end      
+      end
    end
 
    tst = -(1/90);
@@ -1301,7 +1301,7 @@ if (~failed || ~failE || ~failI)
       failI = true;
       if (reportL>1)
          fprintf('    DIRK method fails 6th order condition N (tst = %g)\n', tst);
-      end      
+      end
    end
 
    tst = bE'*AE*AE*(cE.*cE.*cE) - (1/120);
@@ -1310,7 +1310,7 @@ if (~failed || ~failE || ~failI)
       failE = true;
       if (reportL>1)
          fprintf('    ERK method fails 6th order condition O (tst = %g)\n', tst);
-      end      
+      end
    end
 
    tst = bI'*AI*AI*(cI.*cI.*cI) - (1/120);
@@ -1319,7 +1319,7 @@ if (~failed || ~failE || ~failI)
       failI = true;
       if (reportL>1)
          fprintf('    DIRK method fails 6th order condition O (tst = %g)\n', tst);
-      end      
+      end
    end
 
    tst = (bE.*cE)'*AE*AE*AE*cE - (1/144);
@@ -1328,7 +1328,7 @@ if (~failed || ~failE || ~failI)
       failE = true;
       if (reportL>1)
          fprintf('    ERK method fails 6th order condition P (tst = %g)\n', tst);
-      end      
+      end
    end
 
    tst = (bI.*cI)'*AI*AI*AI*cI - (1/144);
@@ -1337,7 +1337,7 @@ if (~failed || ~failE || ~failI)
       failI = true;
       if (reportL>1)
          fprintf('    DIRK method fails 6th order condition P (tst = %g)\n', tst);
-      end      
+      end
    end
 
    tst = -(1/180);
@@ -1355,7 +1355,7 @@ if (~failed || ~failE || ~failI)
       failE = true;
       if (reportL>1)
          fprintf('    ERK method fails 6th order condition Q (tst = %g)\n', tst);
-      end      
+      end
    end
 
    tst = -(1/180);
@@ -1373,7 +1373,7 @@ if (~failed || ~failE || ~failI)
       failI = true;
       if (reportL>1)
          fprintf('    DIRK method fails 6th order condition Q (tst = %g)\n', tst);
-      end      
+      end
    end
 
    tst = -(1/240);
@@ -1391,7 +1391,7 @@ if (~failed || ~failE || ~failI)
       failE = true;
       if (reportL>1)
          fprintf('    ERK method fails 6th order condition R (tst = %g)\n', tst);
-      end      
+      end
    end
 
    tst = -(1/240);
@@ -1409,7 +1409,7 @@ if (~failed || ~failE || ~failI)
       failI = true;
       if (reportL>1)
          fprintf('    DIRK method fails 6th order condition R (tst = %g)\n', tst);
-      end      
+      end
    end
 
    tst = bE'*AE*AE*AE*(cE.*cE) - (1/360);
@@ -1418,7 +1418,7 @@ if (~failed || ~failE || ~failI)
       failE = true;
       if (reportL>1)
          fprintf('    ERK method fails 6th order condition S (tst = %g)\n', tst);
-      end      
+      end
    end
 
    tst = bI'*AI*AI*AI*(cI.*cI) - (1/360);
@@ -1427,7 +1427,7 @@ if (~failed || ~failE || ~failI)
       failI = true;
       if (reportL>1)
          fprintf('    DIRK method fails 6th order condition S (tst = %g)\n', tst);
-      end      
+      end
    end
 
    tst = bE'*AE*AE*AE*AE*cE - (1/720);
@@ -1436,7 +1436,7 @@ if (~failed || ~failE || ~failI)
       failE = true;
       if (reportL>1)
          fprintf('    ERK method fails 6th order condition T (tst = %g)\n', tst);
-      end      
+      end
    end
 
    tst = bI'*AI*AI*AI*AI*cI - (1/720);
@@ -1445,7 +1445,7 @@ if (~failed || ~failE || ~failI)
       failI = true;
       if (reportL>1)
          fprintf('    DIRK method fails 6th order condition T (tst = %g)\n', tst);
-      end      
+      end
    end
 
    counter=0;
@@ -1571,7 +1571,7 @@ if (~failed || ~failE || ~failI)
       end
    end
 
-   
+
    counter=0;
    for ib = 1:2
       b = bs{ib};
@@ -1665,7 +1665,7 @@ if (~failed || ~failE || ~failI)
          end
       end
    end
-   
+
    counter=0;
    for ib = 1:2
       b = bs{ib};
@@ -1804,7 +1804,7 @@ if (~failed || ~failE || ~failI)
          end
       end
    end
-   
+
    counter=0;
    for ib = 1:2
       b = bs{ib};
@@ -1842,7 +1842,7 @@ if (~failed || ~failE || ~failI)
          end
       end
    end
-   
+
    counter=0;
    for ib = 1:2
       b = bs{ib};
@@ -1907,7 +1907,7 @@ if (~failed || ~failE || ~failI)
          end
       end
    end
-   
+
    counter=0;
    for ib = 1:2
       b = bs{ib};
@@ -1936,7 +1936,7 @@ if (~failed || ~failE || ~failI)
          end
       end
    end
-   
+
    counter=0;
    for ib = 1:2
       b = bs{ib};
@@ -2003,7 +2003,7 @@ if (~failed || ~failE || ~failI)
          end
       end
    end
-   
+
    counter=0;
    for ib = 1:2
       b = bs{ib};
@@ -2041,7 +2041,7 @@ if (~failed || ~failE || ~failI)
          end
       end
    end
-   
+
    counter=0;
    for ib = 1:2
       b = bs{ib};
@@ -2099,8 +2099,8 @@ if (~failed || ~failE || ~failI)
          end
       end
    end
-   
-   
+
+
    if (reportL>1)
       if (~failE),  fprintf('  ERK method passes order 6 conditions\n'); end
       if (~failI),  fprintf('  DIRK method passes order 6 conditions\n'); end
@@ -2166,7 +2166,7 @@ end
 if (~failI)
    pI = max(pI,0);
 end
-   
+
 % check for first order embedding
 if (~failed || ~failE || ~failI)
    tst = sum(dE)-1;
@@ -2177,14 +2177,14 @@ if (~failed || ~failE || ~failI)
          fprintf('    ERK embedding fails 1st order condition (tst = %g)\n', tst);
       end
    end
-   
+
    tst = sum(dI)-1;
    if (abs(tst) > tol)
       failed = true;
       failI = true;
       if (reportL>1)
          fprintf('    DIRK embedding fails 1st order condition (tst = %g)\n', tst);
-      end      
+      end
    end
       if (reportL>1)
          if (~failE), fprintf('  ERK embedding passes order 1 conditions\n'); end
@@ -2202,15 +2202,15 @@ if (~failed || ~failE || ~failI)
 end
 
 % check for second order embedding
-if (~failed || ~failE || ~failI) 
-   
+if (~failed || ~failE || ~failI)
+
    tst = dE'*cE - 0.5;
    if (abs(tst) > tol)
       failed = true;
       failE = true;
       if (reportL>1)
          fprintf('    ERK embedding fails 2nd order condition (tst = %g)\n', tst);
-      end      
+      end
    end
 
    tst = dI'*cI - 0.5;
@@ -2219,7 +2219,7 @@ if (~failed || ~failE || ~failI)
       failI = true;
       if (reportL>1)
          fprintf('    DIRK embedding fails 2nd order condition (tst = %g)\n', tst);
-      end      
+      end
    end
 
    tst = dE'*cI - 0.5;
@@ -2228,7 +2228,7 @@ if (~failed || ~failE || ~failI)
       failC = true;
       if (reportL>1)
          fprintf('    ARK embedding fails 2nd order coupling condition A1 (tst = %g)\n', tst);
-      end      
+      end
    end
 
    tst = dI'*cE - 0.5;
@@ -2237,7 +2237,7 @@ if (~failed || ~failE || ~failI)
       failC = true;
       if (reportL>1)
          fprintf('    ARK embedding fails 2nd order coupling condition A2 (tst = %g)\n', tst);
-      end      
+      end
    end
 
    if (reportL>1)
@@ -2258,15 +2258,15 @@ end
 
 
 % check for third order embedding
-if (~failed || ~failE || ~failI) 
-   
+if (~failed || ~failE || ~failI)
+
    tst = dE'*(cE.*cE) - (1/3);
    if (abs(tst) > tol)
       failed = true;
       failE = true;
       if (reportL>1)
          fprintf('    ERK embedding fails 3nd order condition A (tst = %g)\n', tst);
-      end      
+      end
    end
 
    tst = dI'*(cI.*cI) - (1/3);
@@ -2275,7 +2275,7 @@ if (~failed || ~failE || ~failI)
       failI = true;
       if (reportL>1)
          fprintf('    DIRK embedding fails 3rd order condition A (tst = %g)\n', tst);
-      end      
+      end
    end
 
    tst = dE'*(AE*cE) - (1/6);
@@ -2284,7 +2284,7 @@ if (~failed || ~failE || ~failI)
       failE = true;
       if (reportL>1)
          fprintf('    ERK embedding fails 3nd order condition B (tst = %g)\n', tst);
-      end      
+      end
    end
 
    tst = dI'*(AI*cI) - (1/6);
@@ -2293,7 +2293,7 @@ if (~failed || ~failE || ~failI)
       failI = true;
       if (reportL>1)
          fprintf('    DIRK embedding fails 3nd order condition B (tst = %g)\n', tst);
-      end      
+      end
    end
 
    counter=0;
@@ -2356,15 +2356,15 @@ end
 
 
 % check for fourth order embedding
-if (~failed || ~failE || ~failI) 
-   
+if (~failed || ~failE || ~failI)
+
    tst = dE'*(cE.*cE.*cE) - (1/4);
    if (abs(tst) > tol)
       failed = true;
       failE = true;
       if (reportL>1)
          fprintf('    ERK embedding fails 4th order condition A (tst = %g)\n', tst);
-      end      
+      end
    end
 
    tst = dI'*(cI.*cI.*cI) - (1/4);
@@ -2373,7 +2373,7 @@ if (~failed || ~failE || ~failI)
       failI = true;
       if (reportL>1)
          fprintf('    DIRK embedding fails 4th order condition A (tst = %g)\n', tst);
-      end      
+      end
    end
 
    tst = (dE.*cE)'*(AE*cE) - (1/8);
@@ -2382,7 +2382,7 @@ if (~failed || ~failE || ~failI)
       failE = true;
       if (reportL>1)
          fprintf('    ERK embedding fails 4th order condition B (tst = %g)\n', tst);
-      end      
+      end
    end
 
    tst = (dI.*cI)'*(AI*cI) - (1/8);
@@ -2391,7 +2391,7 @@ if (~failed || ~failE || ~failI)
       failI = true;
       if (reportL>1)
          fprintf('    DIRK embedding fails 4th order condition B (tst = %g)\n', tst);
-      end      
+      end
    end
 
    tst = dE'*AE*(cE.*cE) - (1/12);
@@ -2400,7 +2400,7 @@ if (~failed || ~failE || ~failI)
       failE = true;
       if (reportL>1)
          fprintf('    ERK embedding fails 4th order condition C (tst = %g)\n', tst);
-      end      
+      end
    end
 
    tst = dI'*AI*(cI.*cI) - (1/12);
@@ -2409,7 +2409,7 @@ if (~failed || ~failE || ~failI)
       failI = true;
       if (reportL>1)
          fprintf('    DIRK embedding fails 4th order condition C (tst = %g)\n', tst);
-      end      
+      end
    end
 
    tst = dE'*AE*AE*cE - (1/24);
@@ -2418,7 +2418,7 @@ if (~failed || ~failE || ~failI)
       failE = true;
       if (reportL>1)
          fprintf('    ERK embedding fails 4th order condition D (tst = %g)\n', tst);
-      end      
+      end
    end
 
    tst = dI'*AI*AI*cI - (1/24);
@@ -2427,7 +2427,7 @@ if (~failed || ~failE || ~failI)
       failI = true;
       if (reportL>1)
          fprintf('    DIRK embedding fails 4th order condition D (tst = %g)\n', tst);
-      end      
+      end
    end
 
    counter=0;
@@ -2542,15 +2542,15 @@ end
 
 
 % check for fifth order embedding
-if (~failed || ~failE || ~failI) 
-   
+if (~failed || ~failE || ~failI)
+
    tst = dE'*(cE.*cE.*cE.*cE) - (1/5);
    if (abs(tst) > tol)
       failed = true;
       failE = true;
       if (reportL>1)
          fprintf('    ERK embedding fails 5th order condition A (tst = %g)\n', tst);
-      end      
+      end
    end
 
    tst = dI'*(cI.*cI.*cI.*cI) - (1/5);
@@ -2559,7 +2559,7 @@ if (~failed || ~failE || ~failI)
       failI = true;
       if (reportL>1)
          fprintf('    DIRK embedding fails 5th order condition A (tst = %g)\n', tst);
-      end      
+      end
    end
 
    tst = (dE.*cE.*cE)'*(AE*cE) - (1/10);
@@ -2568,7 +2568,7 @@ if (~failed || ~failE || ~failI)
       failE = true;
       if (reportL>1)
          fprintf('    ERK embedding fails 5th order condition B (tst = %g)\n', tst);
-      end      
+      end
    end
 
    tst = (dI.*cI.*cI)'*(AI*cI) - (1/10);
@@ -2577,7 +2577,7 @@ if (~failed || ~failE || ~failI)
       failI = true;
       if (reportL>1)
          fprintf('    DIRK embedding fails 5th order condition B (tst = %g)\n', tst);
-      end      
+      end
    end
 
    tst = dE'*((AE*cE).*(AE*cE)) - (1/20);
@@ -2586,7 +2586,7 @@ if (~failed || ~failE || ~failI)
       failE = true;
       if (reportL>1)
          fprintf('    ERK embedding fails 5th order condition C (tst = %g)\n', tst);
-      end      
+      end
    end
 
    tst = dI'*((AI*cI).*(AI*cI)) - (1/20);
@@ -2595,7 +2595,7 @@ if (~failed || ~failE || ~failI)
       failE = true;
       if (reportL>1)
          fprintf('    DIRK embedding fails 5th order condition C (tst = %g)\n', tst);
-      end      
+      end
    end
 
    tst = (dE.*cE)'*AE*(cE.*cE) - (1/15);
@@ -2604,7 +2604,7 @@ if (~failed || ~failE || ~failI)
       failE = true;
       if (reportL>1)
          fprintf('    ERK embedding fails 5th order condition D (tst = %g)\n', tst);
-      end      
+      end
    end
 
    tst = (dI.*cI)'*AI*(cI.*cI) - (1/15);
@@ -2613,7 +2613,7 @@ if (~failed || ~failE || ~failI)
       failI = true;
       if (reportL>1)
          fprintf('    DIRK embedding fails 5th order condition D (tst = %g)\n', tst);
-      end      
+      end
    end
 
    tst = dE'*AE*(cE.*cE.*cE) - (1/20);
@@ -2622,7 +2622,7 @@ if (~failed || ~failE || ~failI)
       failE = true;
       if (reportL>1)
          fprintf('    ERK embedding fails 5th order condition E (tst = %g)\n', tst);
-      end      
+      end
    end
 
    tst = dI'*AI*(cI.*cI.*cI) - (1/20);
@@ -2631,7 +2631,7 @@ if (~failed || ~failE || ~failI)
       failE = true;
       if (reportL>1)
          fprintf('    DIRK embedding fails 5th order condition E (tst = %g)\n', tst);
-      end      
+      end
    end
 
    tst = (dE.*cE)'*AE*AE*cE - (1/30);
@@ -2640,7 +2640,7 @@ if (~failed || ~failE || ~failI)
       failE = true;
       if (reportL>1)
          fprintf('    ERK embedding fails 5th order condition F (tst = %g)\n', tst);
-      end      
+      end
    end
 
    tst = (dI.*cI)'*AI*AI*cI - (1/30);
@@ -2649,7 +2649,7 @@ if (~failed || ~failE || ~failI)
       failE = true;
       if (reportL>1)
          fprintf('    DIRK embedding fails 5th order condition F (tst = %g)\n', tst);
-      end      
+      end
    end
 
    tst = -(1/40);
@@ -2665,7 +2665,7 @@ if (~failed || ~failE || ~failI)
       failE = true;
       if (reportL>1)
          fprintf('    ERK embedding fails 5th order condition G (tst = %g)\n', tst);
-      end      
+      end
    end
 
    tst = -(1/40);
@@ -2681,7 +2681,7 @@ if (~failed || ~failE || ~failI)
       failE = true;
       if (reportL>1)
          fprintf('    DIRK embedding fails 5th order condition G (tst = %g)\n', tst);
-      end      
+      end
    end
 
    tst = dE'*AE*AE*(cE.*cE) - (1/60);
@@ -2690,7 +2690,7 @@ if (~failed || ~failE || ~failI)
       failE = true;
       if (reportL>1)
          fprintf('    ERK embedding fails 5th order condition H (tst = %g)\n', tst);
-      end      
+      end
    end
 
    tst = dI'*AI*AI*(cI.*cI) - (1/60);
@@ -2699,7 +2699,7 @@ if (~failed || ~failE || ~failI)
       failE = true;
       if (reportL>1)
          fprintf('    DIRK embedding fails 5th order condition H (tst = %g)\n', tst);
-      end      
+      end
    end
 
    tst = dE'*AE*AE*AE*cE - (1/120);
@@ -2708,7 +2708,7 @@ if (~failed || ~failE || ~failI)
       failE = true;
       if (reportL>1)
          fprintf('    ERK embedding fails 5th order condition I (tst = %g)\n', tst);
-      end      
+      end
    end
 
    tst = dI'*AI*AI*AI*cI - (1/120);
@@ -2717,7 +2717,7 @@ if (~failed || ~failE || ~failI)
       failE = true;
       if (reportL>1)
          fprintf('    DIRK embedding fails 5th order condition I (tst = %g)\n', tst);
-      end      
+      end
    end
 
    counter=0;
@@ -2961,7 +2961,7 @@ if (~failed || ~failE || ~failI)
       end
    end
 
-  
+
    if (reportL>1)
       if (~failE),  fprintf('  ERK embedding passes order 5 conditions\n'); end
       if (~failI),  fprintf('  DIRK embedding passes order 5 conditions\n'); end
@@ -2982,15 +2982,15 @@ end
 
 
 % check for sixth order embedding
-if (~failed || ~failE || ~failI) 
-   
+if (~failed || ~failE || ~failI)
+
    tst = dE'*(cE.*cE.*cE.*cE.*cE) - (1/6);
    if (abs(tst) > tol)
       failed = true;
       failE = true;
       if (reportL>1)
          fprintf('    ERK embedding fails 6th order condition A (tst = %g)\n', tst);
-      end      
+      end
    end
 
    tst = dI'*(cI.*cI.*cI.*cI.*cI) - (1/6);
@@ -2999,7 +2999,7 @@ if (~failed || ~failE || ~failI)
       failI = true;
       if (reportL>1)
          fprintf('    DIRK embedding fails 6th order condition A (tst = %g)\n', tst);
-      end      
+      end
    end
 
    tst = (dE.*cE.*cE.*cE)'*AE*cE - (1/12);
@@ -3008,7 +3008,7 @@ if (~failed || ~failE || ~failI)
       failE = true;
       if (reportL>1)
          fprintf('    ERK embedding fails 6th order condition B (tst = %g)\n', tst);
-      end      
+      end
    end
 
    tst = (dI.*cI.*cI.*cI)'*AI*cI - (1/12);
@@ -3017,7 +3017,7 @@ if (~failed || ~failE || ~failI)
       failI = true;
       if (reportL>1)
          fprintf('    DIRK embedding fails 6th order condition B (tst = %g)\n', tst);
-      end      
+      end
    end
 
    tst = -(1/24);
@@ -3033,7 +3033,7 @@ if (~failed || ~failE || ~failI)
       failE = true;
       if (reportL>1)
          fprintf('    ERK embedding fails 6th order condition C (tst = %g)\n', tst);
-      end      
+      end
    end
 
    tst = -(1/24);
@@ -3049,7 +3049,7 @@ if (~failed || ~failE || ~failI)
       failI = true;
       if (reportL>1)
          fprintf('    DIRK embedding fails 6th order condition C (tst = %g)\n', tst);
-      end      
+      end
    end
 
    tst = (dE.*cE.*cE)'*AE*(cE.*cE) - (1/18);
@@ -3058,7 +3058,7 @@ if (~failed || ~failE || ~failI)
       failE = true;
       if (reportL>1)
          fprintf('    ERK embedding fails 6th order condition D (tst = %g)\n', tst);
-      end      
+      end
    end
 
    tst = (dI.*cI.*cI)'*AI*(cI.*cI) - (1/18);
@@ -3067,7 +3067,7 @@ if (~failed || ~failE || ~failI)
       failI = true;
       if (reportL>1)
          fprintf('    DIRK embedding fails 6th order condition D (tst = %g)\n', tst);
-      end      
+      end
    end
 
    tst = -(1/36);
@@ -3083,7 +3083,7 @@ if (~failed || ~failE || ~failI)
       failE = true;
       if (reportL>1)
          fprintf('    ERK embedding fails 6th order condition E (tst = %g)\n', tst);
-      end      
+      end
    end
 
    tst = -(1/36);
@@ -3099,7 +3099,7 @@ if (~failed || ~failE || ~failI)
       failI = true;
       if (reportL>1)
          fprintf('    DIRK embedding fails 6th order condition E (tst = %g)\n', tst);
-      end      
+      end
    end
 
    tst = (dE.*cE)'*AE*(cE.*cE.*cE) - (1/24);
@@ -3108,7 +3108,7 @@ if (~failed || ~failE || ~failI)
       failE = true;
       if (reportL>1)
          fprintf('    ERK embedding fails 6th order condition F (tst = %g)\n', tst);
-      end      
+      end
    end
 
    tst = (dI.*cI)'*AI*(cI.*cI.*cI) - (1/24);
@@ -3117,7 +3117,7 @@ if (~failed || ~failE || ~failI)
       failI = true;
       if (reportL>1)
          fprintf('    DIRK embedding fails 6th order condition F (tst = %g)\n', tst);
-      end      
+      end
    end
 
    tst = dE'*AE*(cE.*cE.*cE.*cE) - (1/30);
@@ -3126,7 +3126,7 @@ if (~failed || ~failE || ~failI)
       failE = true;
       if (reportL>1)
          fprintf('    ERK embedding fails 6th order condition G (tst = %g)\n', tst);
-      end      
+      end
    end
 
    tst = dI'*AI*(cI.*cI.*cI.*cI) - (1/30);
@@ -3135,7 +3135,7 @@ if (~failed || ~failE || ~failI)
       failI = true;
       if (reportL>1)
          fprintf('    DIRK embedding fails 6th order condition G (tst = %g)\n', tst);
-      end      
+      end
    end
 
    tst = (dE.*cE.*cE)'*AE*AE*cE - (1/36);
@@ -3144,7 +3144,7 @@ if (~failed || ~failE || ~failI)
       failE = true;
       if (reportL>1)
          fprintf('    ERK embedding fails 6th order condition H (tst = %g)\n', tst);
-      end      
+      end
    end
 
    tst = (dI.*cI.*cI)'*AI*AI*cI - (1/36);
@@ -3153,7 +3153,7 @@ if (~failed || ~failE || ~failI)
       failI = true;
       if (reportL>1)
          fprintf('    DIRK embedding fails 6th order condition H (tst = %g)\n', tst);
-      end      
+      end
    end
 
    tst = -(1/72);
@@ -3171,7 +3171,7 @@ if (~failed || ~failE || ~failI)
       failE = true;
       if (reportL>1)
          fprintf('    ERK embedding fails 6th order condition I (tst = %g)\n', tst);
-      end      
+      end
    end
 
    tst = -(1/72);
@@ -3189,7 +3189,7 @@ if (~failed || ~failE || ~failI)
       failI = true;
       if (reportL>1)
          fprintf('    DIRK embedding fails 6th order condition I (tst = %g)\n', tst);
-      end      
+      end
    end
 
    tst = -(1/48);
@@ -3205,7 +3205,7 @@ if (~failed || ~failE || ~failI)
       failE = true;
       if (reportL>1)
          fprintf('    ERK embedding fails 6th order condition J (tst = %g)\n', tst);
-      end      
+      end
    end
 
    tst = -(1/48);
@@ -3221,7 +3221,7 @@ if (~failed || ~failE || ~failI)
       failI = true;
       if (reportL>1)
          fprintf('    DIRK embedding fails 6th order condition J (tst = %g)\n', tst);
-      end      
+      end
    end
 
    tst = -(1/60);
@@ -3237,7 +3237,7 @@ if (~failed || ~failE || ~failI)
       failE = true;
       if (reportL>1)
          fprintf('    ERK embedding fails 6th order condition K (tst = %g)\n', tst);
-      end      
+      end
    end
 
    tst = -(1/60);
@@ -3253,7 +3253,7 @@ if (~failed || ~failE || ~failI)
       failI = true;
       if (reportL>1)
          fprintf('    DIRK embedding fails 6th order condition K (tst = %g)\n', tst);
-      end      
+      end
    end
 
    tst = -(1/120);
@@ -3271,7 +3271,7 @@ if (~failed || ~failE || ~failI)
       failE = true;
       if (reportL>1)
          fprintf('    ERK embedding fails 6th order condition L (tst = %g)\n', tst);
-      end      
+      end
    end
 
    tst = -(1/120);
@@ -3289,7 +3289,7 @@ if (~failed || ~failE || ~failI)
       failI = true;
       if (reportL>1)
          fprintf('    DIRK embedding fails 6th order condition L (tst = %g)\n', tst);
-      end      
+      end
    end
 
    tst = (dE.*cE)'*AE*AE*(cE.*cE) - (1/72);
@@ -3298,7 +3298,7 @@ if (~failed || ~failE || ~failI)
       failE = true;
       if (reportL>1)
          fprintf('    ERK embedding fails 6th order condition M (tst = %g)\n', tst);
-      end      
+      end
    end
 
    tst = (dI.*cI)'*AI*AI*(cI.*cI) - (1/72);
@@ -3307,7 +3307,7 @@ if (~failed || ~failE || ~failI)
       failI = true;
       if (reportL>1)
          fprintf('    DIRK embedding fails 6th order condition M (tst = %g)\n', tst);
-      end      
+      end
    end
 
    tst = -(1/90);
@@ -3323,7 +3323,7 @@ if (~failed || ~failE || ~failI)
       failE = true;
       if (reportL>1)
          fprintf('    ERK embedding fails 6th order condition N (tst = %g)\n', tst);
-      end      
+      end
    end
 
    tst = -(1/90);
@@ -3339,7 +3339,7 @@ if (~failed || ~failE || ~failI)
       failI = true;
       if (reportL>1)
          fprintf('    DIRK embedding fails 6th order condition N (tst = %g)\n', tst);
-      end      
+      end
    end
 
    tst = dE'*AE*AE*(cE.*cE.*cE) - (1/120);
@@ -3348,7 +3348,7 @@ if (~failed || ~failE || ~failI)
       failE = true;
       if (reportL>1)
          fprintf('    ERK embedding fails 6th order condition O (tst = %g)\n', tst);
-      end      
+      end
    end
 
    tst = dI'*AI*AI*(cI.*cI.*cI) - (1/120);
@@ -3357,7 +3357,7 @@ if (~failed || ~failE || ~failI)
       failI = true;
       if (reportL>1)
          fprintf('    DIRK embedding fails 6th order condition O (tst = %g)\n', tst);
-      end      
+      end
    end
 
    tst = (dE.*cE)'*AE*AE*AE*cE - (1/144);
@@ -3366,7 +3366,7 @@ if (~failed || ~failE || ~failI)
       failE = true;
       if (reportL>1)
          fprintf('    ERK embedding fails 6th order condition P (tst = %g)\n', tst);
-      end      
+      end
    end
 
    tst = (dI.*cI)'*AI*AI*AI*cI - (1/144);
@@ -3375,7 +3375,7 @@ if (~failed || ~failE || ~failI)
       failI = true;
       if (reportL>1)
          fprintf('    DIRK embedding fails 6th order condition P (tst = %g)\n', tst);
-      end      
+      end
    end
 
    tst = -(1/180);
@@ -3393,7 +3393,7 @@ if (~failed || ~failE || ~failI)
       failE = true;
       if (reportL>1)
          fprintf('    ERK embedding fails 6th order condition Q (tst = %g)\n', tst);
-      end      
+      end
    end
 
    tst = -(1/180);
@@ -3411,7 +3411,7 @@ if (~failed || ~failE || ~failI)
       failI = true;
       if (reportL>1)
          fprintf('    DIRK embedding fails 6th order condition Q (tst = %g)\n', tst);
-      end      
+      end
    end
 
    tst = -(1/240);
@@ -3429,7 +3429,7 @@ if (~failed || ~failE || ~failI)
       failE = true;
       if (reportL>1)
          fprintf('    ERK embedding fails 6th order condition R (tst = %g)\n', tst);
-      end      
+      end
    end
 
    tst = -(1/240);
@@ -3447,7 +3447,7 @@ if (~failed || ~failE || ~failI)
       failI = true;
       if (reportL>1)
          fprintf('    DIRK embedding fails 6th order condition R (tst = %g)\n', tst);
-      end      
+      end
    end
 
    tst = dE'*AE*AE*AE*(cE.*cE) - (1/360);
@@ -3456,7 +3456,7 @@ if (~failed || ~failE || ~failI)
       failE = true;
       if (reportL>1)
          fprintf('    ERK embedding fails 6th order condition S (tst = %g)\n', tst);
-      end      
+      end
    end
 
    tst = dI'*AI*AI*AI*(cI.*cI) - (1/360);
@@ -3465,7 +3465,7 @@ if (~failed || ~failE || ~failI)
       failI = true;
       if (reportL>1)
          fprintf('    DIRK embedding fails 6th order condition S (tst = %g)\n', tst);
-      end      
+      end
    end
 
    tst = dE'*AE*AE*AE*AE*cE - (1/720);
@@ -3474,7 +3474,7 @@ if (~failed || ~failE || ~failI)
       failE = true;
       if (reportL>1)
          fprintf('    ERK embedding fails 6th order condition T (tst = %g)\n', tst);
-      end      
+      end
    end
 
    tst = dI'*AI*AI*AI*AI*cI - (1/720);
@@ -3483,7 +3483,7 @@ if (~failed || ~failE || ~failI)
       failI = true;
       if (reportL>1)
          fprintf('    DIRK embedding fails 6th order condition T (tst = %g)\n', tst);
-      end      
+      end
    end
 
    counter=0;
@@ -3609,7 +3609,7 @@ if (~failed || ~failE || ~failI)
       end
    end
 
-   
+
    counter=0;
    for ib = 1:2
       b = bs{ib};
@@ -3703,7 +3703,7 @@ if (~failed || ~failE || ~failI)
          end
       end
    end
-   
+
    counter=0;
    for ib = 1:2
       b = bs{ib};
@@ -3842,7 +3842,7 @@ if (~failed || ~failE || ~failI)
          end
       end
    end
-   
+
    counter=0;
    for ib = 1:2
       b = bs{ib};
@@ -3880,7 +3880,7 @@ if (~failed || ~failE || ~failI)
          end
       end
    end
-   
+
    counter=0;
    for ib = 1:2
       b = bs{ib};
@@ -3945,7 +3945,7 @@ if (~failed || ~failE || ~failI)
          end
       end
    end
-   
+
    counter=0;
    for ib = 1:2
       b = bs{ib};
@@ -3974,7 +3974,7 @@ if (~failed || ~failE || ~failI)
          end
       end
    end
-   
+
    counter=0;
    for ib = 1:2
       b = bs{ib};
@@ -4041,7 +4041,7 @@ if (~failed || ~failE || ~failI)
          end
       end
    end
-   
+
    counter=0;
    for ib = 1:2
       b = bs{ib};
@@ -4079,7 +4079,7 @@ if (~failed || ~failE || ~failI)
          end
       end
    end
-   
+
    counter=0;
    for ib = 1:2
       b = bs{ib};
@@ -4137,8 +4137,8 @@ if (~failed || ~failE || ~failI)
          end
       end
    end
-   
-   
+
+
    if (reportL>1)
       if (~failE),  fprintf('  ERK embedding passes order 6 conditions\n'); end
       if (~failI),  fprintf('  DIRK embedding passes order 6 conditions\n'); end
@@ -4172,18 +4172,14 @@ end
 
 % generate plot of stability regions
 if (doPlot)
-   figure()
+   fig = figure();
    xl = box(1:2);  yl = box(3:4);
    xax = plot( linspace(xl(1),xl(2),10), zeros(1,10), 'k:'); hold on
    yax = plot( zeros(1,10), linspace(yl(1),yl(2),10), 'k:');
-   [X,Y] = stab_region(AE, bE, box);     % ERK stability region boundary
-   plot(X, Y, 'r-')
-   [X,Y] = stab_region(AE, dE, box);     % ERK embedding stability region boundary
-   plot(X, Y, 'g-')
-   [X,Y] = stab_region(AI, bI, box);     % DIRK stability region boundary
-   plot(X, Y, 'b-')
-   [X,Y] = stab_region(AI, dI, box);     % DIRK embedding stability region boundary
-   plot(X, Y, 'm-')
+   stab_region(AE, bE, box, fig, 'r-');     % ERK stability region boundary
+   stab_region(AE, dE, box, fig, 'g-');     % ERK embedding stability region boundary
+   stab_region(AI, bI, box, fig, 'b-');     % DIRK stability region boundary
+   stab_region(AI, dI, box, fig, 'm-');     % DIRK embedding stability region boundary
    set(get(get(xax,'Annotation'),'LegendInformation'), 'IconDisplayStyle','off');
    set(get(get(yax,'Annotation'),'LegendInformation'), 'IconDisplayStyle','off');
    axis(box)

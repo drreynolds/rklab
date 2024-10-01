@@ -164,15 +164,13 @@ end
 
 % generate plot of stability region
 if (doPlot)
-   figure()
+   fig = figure();
    xl = box(1:2);  yl = box(3:4);
    xax = plot(linspace(xl(1),xl(2),10),zeros(1,10),'k:'); hold on
    yax = plot(zeros(1,10),linspace(yl(1),yl(2),10),'k:');
-   [X,Y] = stab_region(A,b,box);
-   plot(X,Y,'r-')
+   stab_region(A,b,box,fig,'r-');
    if (embedded)
-      [X,Y] = stab_region(A,d,box);
-      plot(X,Y,'b--')
+      stab_region(A,d,box,fig,'b--');
    end
    set(get(get(xax,'Annotation'),'LegendInformation'), 'IconDisplayStyle','off');
    set(get(get(yax,'Annotation'),'LegendInformation'), 'IconDisplayStyle','off');

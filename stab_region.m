@@ -1,15 +1,13 @@
-function [X,Y] = stab_region(A,b,box)
-% Usage: [X,Y] = stab_region(A,b,box)
-% 
+function stab_region(A,b,box,fig,fmt)
+% Usage: stab_region(A,b,box,fig,fmt)
+%
 % Inputs:
 %    A is a Butcher table matrix
 %    b is a Butcher table gluing coefficients
 %    box = [xl, xr, yl, yr] is the bounding box for the sub-region
 %          of the complex plane in which to perform the test
-%
-% Outputs:
-%    X is an array of real components of the stability boundary
-%    Y is an array of imaginary components of the stability boundary
+%    fig = figure handle to use
+%    fmt = plot format string to use
 %
 % We consider the RK stability function
 %    R(eta) = 1 + eta*b'*((I-eta*A)\e)
@@ -51,10 +49,21 @@ for j=1:N
   end
 end
 
-% create contour 
+% create contour
 %c = contourc(x,y,R,[1 1]);
 c = contourc(x,y,R,[1+eps 1+eps]);
-X = c(1,2:c(2,1)+1);
-Y = c(2,2:c(2,1)+1);
-  
+
+% assemble plot
+figure(fig);
+hold on
+idx = 1;
+while idx < size(c,2)
+  cols = idx+1:idx+c(2,idx);
+  X = c(1,cols);
+  Y = c(2,cols);
+  plot(X, Y, fmt)
+  idx = idx + c(2,idx) + 1;
+end
+hold off
+
 % end of function

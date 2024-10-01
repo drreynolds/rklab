@@ -2128,14 +2128,12 @@ end
 
 % generate plot of stability regions
 if (doPlot)
-   figure()
+   fig = figure();
    xl = box(1:2);  yl = box(3:4);
    xax = plot(linspace(xl(1),xl(2),10),zeros(1,10),'k:'); hold on
    yax = plot(zeros(1,10),linspace(yl(1),yl(2),10),'k:');
-   [X,Y] = stab_region(AE,bE,box);     % ERK stability region boundary
-   plot(X,Y,'r-')
-   [X,Y] = stab_region(AI,bI,box);     % DIRK stability region boundary
-   plot(X,Y,'b-'), hold off
+   stab_region(AE,bE,box,fig,'r-');     % ERK stability region boundary
+   stab_region(AI,bI,box,fig,'b-');     % DIRK stability region boundary
    set(get(get(xax,'Annotation'),'LegendInformation'), 'IconDisplayStyle','off');
    set(get(get(yax,'Annotation'),'LegendInformation'), 'IconDisplayStyle','off');
    axis(box)
