@@ -1064,16 +1064,17 @@ elseif (strcmp(method_name,'SSP(10,2)-ERK'))
    p = 1;
    B = [c, A; q, b; p, b2];
 
-elseif (strcmp(method_name,'SSP(4,3)-ERK'))  % CURRENTLY BROKEN
+elseif (strcmp(method_name,'SSP(4,3)-ERK'))
 
    n=v(2);
    s=v(4);
    A = [ z, z, z, z;
          v(1)/v(2), z, z, z;
          v(1)/v(2), v(1)/v(2), z, z;
-         v(1)/v(2), v(1)/v(2), v(1)/v(2), z];
+         v(1)/v(6), v(1)/v(6), v(1)/v(6), z];
    b = [ v(1)/v(6), v(1)/v(6), v(1)/v(6), v(1)/v(2)];
    b2 = [ v(1)/v(4), v(1)/v(4), v(1)/v(4), v(1)/v(4)];
+   %b2 = [ v(1)/v(3), v(1)/v(3), v(1)/v(3), z];
    c = sum(A,2);
    q = 3;
    p = 2;
@@ -1904,6 +1905,7 @@ elseif (strcmp(method_name,'SSP2(2,2,2)-ERK'))
    b = [v(1)/v(2), v(1)/v(2)];
    c = [z; v(1)];
    q = 2;
+   B = [c, A; q, b];
 
 elseif (strcmp(method_name,'SSP2(2,2,2)-SDIRK'))
 
