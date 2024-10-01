@@ -14,7 +14,7 @@ function B = butcher(method_name,symbolic)
 %
 % If the 'symbolic' input flag is both present and is 'true', then
 % the resulting Butcher table is returned in symbolic format (to
-% full precision). 
+% full precision).
 %
 % Method types are specified by the abbreviations:
 %       ERK - explicit Runge Kutta (strictly lower-triangular A)
@@ -51,20 +51,20 @@ function B = butcher(method_name,symbolic)
 % variables to eliminate floating-point calculation error.  This
 % routine tests the full analytical order conditions up to 6;
 % thereafter it merely checks Butcher's simplifying assumptions to
-% assess higher orders of accuracy.  
+% assess higher orders of accuracy.
 %
 % Since Butcher's simplifying assumptions correspond to sufficient
 % (but not necessary) conditions for order of accuracy, we may
 % report an accuracy of 6 when in fact the method has higher
 % order. Methods where we report 6 but have higher published order
 % are marked with "+".
-% 
+%
 % However, since we analytically assess the *necessary* order
 % conditions up to 6, any method with published accuracy <= 6 that
 % does NOT attain this published order is marked with "-".
 %
 % Explicit, non-embedded methods:
-% 
+%
 %             Name             |  s |  q  lq  |  tol
 %   --------------------------------------------------
 %                     ERK-1-1  |  1 |  1   1  | 1e-40
@@ -99,14 +99,21 @@ function B = butcher(method_name,symbolic)
 %
 %
 % Explicit, embedded methods:
-% 
+%
 %                              |    |  Method |  Embedding  |
 %             Name             |  s |  q  lq  |  p  lp      | tol
 %   -----------------------------------------------------------------
 %              Heun-Euler-ERK  |  2 |  2   2  |  1   1       | 1e-40
+%                SSP(2,2)-ERK  |  2 |  2   2  |  1   1       | 1e-40
+%                SSP(4,2)-ERK  |  4 |  2   2  |  1   1       | 1e-40
+%               SSP(10,2)-ERK  | 10 |  2   2  |  1   1       | 1e-40
 %                     ERK-3-3  |  3 |  3   3  |  2   2       | 1e-40
+%                SSP(4,3)-ERK  |  4 |  3   3  |  2   2       | 1e-40
+%                SSP(9,3)-ERK  |  9 |  3   3  |  2   2       | 1e-40
+%               SSP(16,3)-ERK  | 16 |  3   3  |  2   2       | 1e-40
 %          ARK3(2)4L[2]SA-ERK  |  4 |  3   3  |  2   2       | 1e-25
 %        Bogacki-Shampine-ERK  |  4 |  3   3  |  2   2       | 1e-40
+%               SSP(10,4)-ERK  | 10 |  4   4  |  3   3       | 1e-40
 %              Merson-4-3-ERK  |  5 |  4   4  |  3   5       | 1e-40
 %           Zonneveld-4-3-ERK  |  5 |  4   4  |  3   3       | 1e-40
 %          ARK4(3)6L[2]SA-ERK  |  6 |  4   4  |  3   3       | 1e-25
@@ -119,10 +126,10 @@ function B = butcher(method_name,symbolic)
 %         ARK5(4)8L[2]SAb-ERK  |  8 |  5   5  |  4   4       | 1e-25
 %              Verner-6-5-ERK  |  8 |  6   6  |  5   5       | 1e-40
 %            Fehlberg-8-7-ERK  | 13 |  6+  8  |  6+  7       | 1e-40
-% 
+%
 %
 % Diagonally-implicit, non-embedded methods:
-% 
+%
 %             Name             |  s |  q  lq   A   B   L  |  qs  tol
 %   ------------------------------------------------------------------
 %           SSP2(2,2,2)-SDIRK  |  2 |  2   2   Y   Y   Y  |  1  1e-40
@@ -151,7 +158,7 @@ function B = butcher(method_name,symbolic)
 %
 %
 % Diagonally-implicit, embedded methods:
-% 
+%
 %                              |    |       Method        |      Embedding      |
 %             Name             |  s |  q  lq   A   B   L  |  p  lp   A   B   L  |  qs  tol
 %   ----------------------------------------------------------------------------------------
@@ -182,11 +189,11 @@ function B = butcher(method_name,symbolic)
 %             ESDIRK6(4)7A[2]  |  7 |  0   0              |  0   0              |  0  -----
 %
 %   Note: both ESDIRK5(4I)8L[2]SA and ESDIRK6(4)7A[2] seem to have typos in the 7th row
-%   in the paper where they are presented, as both fail the row-sum condition. 
+%   in the paper where they are presented, as both fail the row-sum condition.
 %
 %
 % Fully-implicit, non-embedded methods:
-% 
+%
 %             Name             |  s |  q  lq   A   B   L  |  qs  tol
 %   --------------------------------------------------------------------
 %                     IRK-1-1  |  1 |  1   1   Y   Y   Y  |  1  1e-40
@@ -216,7 +223,7 @@ function B = butcher(method_name,symbolic)
 %          LobattoIII-5-8-IRK  |  5 |  8   8              |  4  1e-40
 %            RadauIIA-5-9-IRK  |  5 |  9   8   Y   Y   Y  |  5  1e-15
 %              Gauss-6-12-IRK  |  6 | 12   8   Y   Y      |  6  1e-16
-%   
+%
 %
 %------------------------------------------------------------
 % Programmer(s):  Daniel R. Reynolds @ SMU
@@ -338,7 +345,7 @@ elseif (strcmp(method_name,'ARK4(3)6L[2]SA-ESDIRK'))
 elseif (strcmp(method_name,'ESDIRK4(3)6L[2]SA'))
 
    % From: Table 16 of Kennedy & Carpenter, NASA/TM-2016-219173
-  
+
    c = [z; v(1)/v(2); (v(2)-sqrt(v(2)))/v(4); v(5)/v(8); v(26)/v(25); v(1)];
    b = [(v(1181)-v(987)*sqrt(v(2)))/v(13782), (v(1181)-v(987)*sqrt(v(2)))/v(13782), v(47)*(-v(267)+v(1783)*sqrt(v(2)))/v(273343), -v(16)*(-v(22922)+v(3525)*sqrt(v(2)))/v(571953), -v(15625)*(v(97)+v(376)*sqrt(v(2)))/v(90749876), v(1)/v(4)];
    b2 = [-v(480923228411)/v(4982971448372), -v(480923228411)/v(4982971448372), v(6709447293961)/v(12833189095359), v(3513175791894)/v(6748737351361), -v(498863281070)/v(6042575550617), v(2077005547802)/v(8945017530137)];
@@ -355,7 +362,7 @@ elseif (strcmp(method_name,'ESDIRK4(3)6L[2]SA'))
 elseif (strcmp(method_name,'ESDIRK4(3I)6L[2]SA'))
 
    % From: Table 17 of Kennedy & Carpenter, NASA/TM-2016-219173
-  
+
    c = [z; v(1)/v(2); (v(2)-sqrt(v(2)))/v(4); v(2012122486997)/v(3467029789466); v(1); v(1)];
    b = [v(657241292721)/v(9909463049845), v(657241292721)/v(9909463049845), v(1290772910128)/v(5804808736437), v(1103522341516)/v(2197678446715), -v(3)/v(28), v(1)/v(4)];
    b2 = [-v(71925161075)/v(3900939759889), -v(71925161075)/v(3900939759889), v(2973346383745)/v(8160025745289), v(3972464885073)/v(7694851252693), -v(263368882881)/v(4213126269514), v(3295468053953)/v(15064441987965)];
@@ -372,7 +379,7 @@ elseif (strcmp(method_name,'ESDIRK4(3I)6L[2]SA'))
 elseif (strcmp(method_name,'QESDIRK4(3)6L[2]SA'))
 
    % From: Table 20 of Kennedy & Carpenter, NASA/TM-2016-219173
-  
+
    c = [z; v(16)/v(75); v(8)*(v(2)-sqrt(v(2)))/v(25); v(1298154247449)/v(2478647287318); v(11563539331134)/v(11078645848867); v(1)];
    b = [v(540088238697)/v(4693226184761), z, v(1094762490994)/v(7880993776667), v(4016564763003)/v(7185357966874), -v(411820258827)/v(3096789411938), v(8)/v(25)];
    b2 = [-v(374484326677)/v(8442488809460), -v(41125091159938)/v(25963879779069), v(24025088270494)/v(12927594097169), v(5193917461301)/v(8985383982321), -v(1843122001830)/v(16078617943063), v(2439572212972)/v(7960792257433)];
@@ -403,7 +410,7 @@ elseif (strcmp(method_name,'SDIRK4()5L[1]SA'))
 elseif (strcmp(method_name,'ESDIRK5(3)6L[2]SA'))
 
   % From: Table 23 of Kennedy & Carpenter, NASA/TM-2016-219173
-  
+
    c = [z; v(4024571134387)/v(7237035672548); v(14228244952610)/v(13832614967709); v(1)/v(10); v(3)/v(50); v(1)];
    b = [-v(6225479754948)/v(6925873918471), v(6894665360202)/v(11185215031699), -v(2508324082331)/v(20512393166649), -v(7289596211309)/v(4653106810017), v(39811658682819)/v(14781729060964), v(3282482714977)/v(11805205429139)];
    b2 = [-v(2512930284403)/v(5616797563683), v(5849584892053)/v(8244045029872), -v(718651703996)/v(6000050726475), -v(18982822128277)/v(13735826808854), v(23127941173280)/v(11608435116569), v(2847520232427)/v(11515777524847)];
@@ -432,7 +439,7 @@ elseif (strcmp(method_name,'SDIRK5()5L[1]'))
 elseif (strcmp(method_name,'ESDIRK5(4)7L[2]SA'))
 
    % From: Table 25 of Kennedy & Carpenter, NASA/TM-2016-219173
-  
+
    c = [z; v(46)/v(125); v(1518047795759)/v(14084074382095); v(13)/v(25); v(5906118540659)/v(9042400211275); v(26)/v(25); v(1)];
    b = [z, -v(1319096626979)/v(17356965168099), v(4356877330928)/v(10268933656267), v(922991294344)/v(3350617878647), v(4729382008034)/v(14755765856909), -v(308199069217)/v(5897303561678), v(23)/v(125)];
    b(1) = v(1)-sum(b);
@@ -458,7 +465,7 @@ elseif (strcmp(method_name,'ESDIRK6(4)7A[2]'))
 
    % From: Table 27 of Kennedy & Carpenter, NASA/TM-2016-219173
    % NOTE: row 7 of A has typos in their paper!!
-  
+
    c = [z; v(5)/v(8); v(5)*(v(2)-sqrt(v(2)))/v(16); v(81)/v(100); v(89)/v(100); v(3)/v(20); v(11)/v(16)];
    b = [v(541976983222)/v(5570117184863), v(424517620289)/v(10281234581904), v(3004784109584)/v(2968823999583), -v(1080268266981)/v(2111416452515), v(3198291424887)/v(7137915940442), -v(6709580973937)/v(9894986011196), v(4328230890552)/v(7324362344791)];
    b2 = [v(23807813993)/v(6613359907661), v(122567156372)/v(6231407414731), v(5289947382915)/v(9624205771537), -v(132784415823)/v(2592433009541), v(2055455363695)/v(9863229933602), -v(686952476184)/v(6416474135057), v(2766631516579)/v(7339217152243)];
@@ -477,7 +484,7 @@ elseif (strcmp(method_name,'ESDIRK5(4I)8L[2]SA'))
 
    % From: Table 28 of Kennedy & Carpenter, NASA/TM-2016-219173
    % NOTE: row 7 of A has typos in their paper!!
-  
+
    c = [z; v(1)/v(2); (v(2)+sqrt(v(2)))/v(4); v(53)/v(100); v(4)/v(5); v(17)/v(25); v(1); v(1)];
    b = [v(3148564786223)/v(23549948766475), -v(4152366519273)/v(20368318839251), -v(143958253112335)/v(33767350176582), v(16929685656751)/v(6821330976083), v(37330861322165)/v(4907624269821), -v(103974720808012)/v(20856851060343), -v(93596557767)/v(4675692258479), v(1)/v(4)];
    b2 = [v(1707112744407)/v(11125291145125), -v(34114578494)/v(9511465441463), -v(10730340352595)/v(5750059075211), v(16308974155447)/v(11154981868028), v(16015983083570)/v(4734398780449), -v(16745095336747)/v(7220642436550), -v(3941055932791)/v(7113931146175), v(9504350599766)/v(12768012822991)];
@@ -882,7 +889,7 @@ elseif (strcmp(method_name,'Cooper6-ERK'))
 elseif (strcmp(method_name,'Cooper6-ESDIRK'))
 
    beta = v(1.0685790213);
-   c = [z; v(1)/v(2); v(1)/v(2); v(1)/v(2); 1; 1];
+   c = [z; v(1)/v(2); v(1)/v(2); v(1)/v(2); v(1); v(1)];
    b = [v(1)/v(6), z, z, v(2)/v(3), v(1)/v(6), z];
    A = [z, z, z, z, z, z;
         (v(1)-v(2)*beta)/v(2), beta, z, z, z, z;
@@ -895,12 +902,130 @@ elseif (strcmp(method_name,'Cooper6-ESDIRK'))
 
 elseif (strcmp(method_name,'Heun-Euler-ERK'))
 
-   A = [ z, z; 1, z];
+   A = [ z, z; v(1), z];
    b = [ v(0.5), v(0.5)];
    b2 = [ v(1), z];
    c = [ z; v(1)];
    q = 2;
    p = 1;
+   B = [c, A; q, b; p, b2];
+
+elseif (strcmp(method_name,'SSP(2,2)-ERK'))
+
+   A = [ z, z; v(1), z];
+   b = [ v(0.5), v(0.5)];
+   b2 = [ v(0.694021459207626), v(1)-v(0.694021459207626)];
+   c = [ z; v(1)];
+   q = 2;
+   p = 1;
+   B = [c, A; q, b; p, b2];
+
+elseif (strcmp(method_name,'SSP(4,2)-ERK'))
+
+   A = [ z, z, z, z;
+         v(1)/v(3), z, z, z;
+         v(1)/v(3), v(1)/v(3), z, z;
+         v(1)/v(3), v(1)/v(3), v(1)/v(3), z];
+   b = [ v(1)/v(4), v(1)/v(4), v(1)/v(4), v(1)/v(4)];
+   b2 = [ v(5)/v(16), v(1)/v(4), v(1)/v(4), v(3)/v(16)];
+   c = [ z; v(1)/v(3); v(2)/v(3); v(1)];
+   q = 2;
+   p = 1;
+   B = [c, A; q, b; p, b2];
+
+elseif (strcmp(method_name,'SSP(10,2)-ERK'))
+
+   t1 = v(1)/v(9);
+   A = [ z, z, z, z, z, z, z, z, z, z;
+        t1, z, z, z, z, z, z, z, z, z;
+        t1, t1, z, z, z, z, z, z, z, z;
+        t1, t1, t1, z, z, z, z, z, z, z;
+        t1, t1, t1, t1, z, z, z, z, z, z;
+        t1, t1, t1, t1, t1, z, z, z, z, z;
+        t1, t1, t1, t1, t1, t1, z, z, z, z;
+        t1, t1, t1, t1, t1, t1, t1, z, z, z;
+        t1, t1, t1, t1, t1, t1, t1, t1, z, z;
+        t1, t1, t1, t1, t1, t1, t1, t1, t1, z];
+   t2 = v(1)/v(10);
+   b = [ t2, t2, t2, t2, t2, t2, t2, t2, t2, t2];
+   b2 = [ v(11)/v(100), t2, t2, t2, t2, t2, t2, t2, t2, v(9)/v(100) ];
+   c = [ z; t1; v(2)*t1; v(3)*t1; v(4)*t1; v(5)*t1; v(6)*t1; v(7)*t1; v(8)*t1; v(1)];
+   q = 2;
+   p = 1;
+   B = [c, A; q, b; p, b2];
+
+elseif (strcmp(method_name,'SSP(4,3)-ERK'))  % CURRENTLY BROKEN
+
+   n=v(2);
+   s=v(4);
+   A = [ z, z, z, z;
+         v(1)/v(2), z, z, z;
+         v(1)/v(2), v(1)/v(2), z, z;
+         v(1)/v(2), v(1)/v(2), v(1)/v(2), z];
+   b = [ v(1)/v(6), v(1)/v(6), v(1)/v(6), v(1)/v(2)];
+   b2 = [ v(1)/v(4), v(1)/v(4), v(1)/v(4), v(1)/v(4)];
+   c = sum(A,2);
+   q = 3;
+   p = 2;
+   B = [c, A; q, b; p, b2];
+
+elseif (strcmp(method_name,'SSP(9,3)-ERK'))
+
+   t1 = v(1)/v(6);
+   t2 = v(1)/v(15);
+   A = [ z, z, z, z, z, z, z, z, z;
+        t1, z, z, z, z, z, z, z, z;
+        t1, t1, z, z, z, z, z, z, z;
+        t1, t1, t1, z, z, z, z, z, z;
+        t1, t1, t1, t1, z, z, z, z, z;
+        t1, t1, t1, t1, t1, z, z, z, z;
+        t1, t2, t2, t2, t2, t2, z, z, z;
+        t1, t2, t2, t2, t2, t2, t1, z, z;
+        t1, t2, t2, t2, t2, t2, t1, t1, z];
+   b = [ t1, t2, t2, t2, t2, t2, t1, t1, t1 ];
+   t3 = v(1)/v(9);
+   b2 = [ t3, t3, t3, t3, t3, t3, t3, t3, t3 ];
+   c = sum(A,2);
+   q = 3;
+   p = 2;
+   B = [c, A; q, b; p, b2];
+
+elseif (strcmp(method_name,'SSP(16,3)-ERK'))
+
+   x = v(1)/v(12);
+   y = v(1)/v(28);
+   A = x*ones(16,16);
+   A = tril(A,-1);
+   A(11:16, 4:10) = y;
+   b = x*ones(1,16);
+   b(4:10) = y;
+   t3 = v(1)/v(16);
+   b2 = t3*ones(1,16);
+   c = sum(A,2);
+   q = 3;
+   p = 2;
+   B = [c, A; q, b; p, b2];
+
+elseif (strcmp(method_name,'SSP(10,4)-ERK'))
+
+   t1 = v(1)/v(6);
+   t2 = v(1)/v(15);
+   A = [ z, z, z, z, z, z, z, z, z, z;
+        t1, z, z, z, z, z, z, z, z, z;
+        t1, t1, z, z, z, z, z, z, z, z;
+        t1, t1, t1, z, z, z, z, z, z, z;
+        t1, t1, t1, t1, z, z, z, z, z, z;
+        t2, t2, t2, t2, t2, z, z, z, z, z;
+        t2, t2, t2, t2, t2, t1, z, z, z, z;
+        t2, t2, t2, t2, t2, t1, t1, z, z, z;
+        t2, t2, t2, t2, t2, t1, t1, t1, z, z;
+        t2, t2, t2, t2, t2, t1, t1, t1, t1, z];
+   t3 = v(1)/v(10);
+   b = [ t3, t3, t3, t3, t3, t3, t3, t3, t3, t3 ];
+   b2 = [ v(1)/v(5), z, z, v(3)/v(10), z, z, v(1)/v(5), z, v(3)/v(10), z ];
+   c = sum(A,2);
+   q = 4;
+   p = 3;
    B = [c, A; q, b; p, b2];
 
 elseif (strcmp(method_name,'Bogacki-Shampine-ERK'))
@@ -1512,7 +1637,7 @@ elseif (strcmp(method_name,'LobattoIIIC-5-8-IRK'))
 elseif (strcmp(method_name,'ESDIRK3(2)5L[2]SA'))
 
   % From: Table 10 of Kennedy & Carpenter, NASA/TM-2016-219173
-  
+
    A = [z, z, z, z, z; ...
         v(9)/v(40), v(9)/v(40), z, z, z; ...
         v(9)*(v(1)+sqrt(v(2)))/v(80), v(9)*(v(1)+sqrt(v(2)))/v(80), v(9)/v(40), z, z; ...
@@ -1528,7 +1653,7 @@ elseif (strcmp(method_name,'ESDIRK3(2)5L[2]SA'))
 elseif (strcmp(method_name,'ESDIRK3(2I)5L[2]SA'))
 
   % From: Table 11 of Kennedy & Carpenter, NASA/TM-2016-219173
-  
+
    c = [z; v(9)/v(20); v(4)/v(5); v(1); v(1)];
    b = [v(7415)/v(34776), v(9920)/v(30429), v(4845)/v(9016), -v(5827)/v(19320), v(9)/v(40)];
    b2 = [v(23705)/v(104328), v(29720)/v(91287), v(4225)/v(9016), -v(69304987)/v(337732920), v(42843)/v(233080)];
@@ -1621,7 +1746,6 @@ elseif (strcmp(method_name,'SSP2(2,2,2)-ERK'))
    b = [v(1)/v(2), v(1)/v(2)];
    c = [z; v(1)];
    q = 2;
-   B = [c, A; q, b];
 
 elseif (strcmp(method_name,'SSP2(2,2,2)-SDIRK'))
 
